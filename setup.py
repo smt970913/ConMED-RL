@@ -11,8 +11,12 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 # Read the requirements file
-with open("requirements.txt", "r", encoding="utf-8") as fh:
-    requirements = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
+try:
+    with open("requirements.txt", "r", encoding="utf-8") as fh:
+        requirements = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
+except UnicodeDecodeError:
+    with open("requirements.txt", "r", encoding="utf-8-sig") as fh:
+        requirements = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
 
 # Read version from ConCareRL/__init__.py
 def get_version():

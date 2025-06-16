@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  concarerl-app:
+    build:
+      context: ..
+      dockerfile: Docker-Deployment/Dockerfile
+      target: production
+    container_name: concarerl-dev
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - FLASK_APP=CDM-Software/web_application_test.py
+      - PYTHONPATH=/app
+      - WORKERS=2
+      - PORT=5000
+      - LOG_LEVEL=DEBUG
+    volumes:
+      # Mount logs for development
+      - ./logs:/app/logs
+      # Mount source code for development (optional, for hot reload)
+      # - ../CDM-Software:/app/CDM-Software:ro
+    networks:
+      - concarerl-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Add a database service for future use
+  # postgres:
+  #   image: postgres:14-alpine
+  #   container_name: concarerl-db
+  #   environment:
+  #     POSTGRES_DB: concarerl
+  #     POSTGRES_USER: concarerl
+  #     POSTGRES_PASSWORD: password
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - concarerl-network
+  #   restart: unless-stopped
+
+networks:
+  concarerl-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local 

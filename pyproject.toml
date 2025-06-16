@@ -1,0 +1,102 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "concarerl"
+dynamic = ["version"]
+description = "An Offline Constrained Reinforcement Learning Toolkit for Critical Care Decision Making"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Maotong Sun", email = "maotong.sun@tum.de"},
+    {name = "Jingui Xie", email = "jingui.xie@tum.de"},
+]
+maintainers = [
+    {name = "Maotong Sun", email = "maotong.sun@tum.de"},
+    {name = "Jingui Xie", email = "jingui.xie@tum.de"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Operating System :: OS Independent",
+]
+keywords = [
+    "reinforcement learning",
+    "constrained reinforcement learning",
+    "offline reinforcement learning", 
+    "clinical decision support",
+    "healthcare",
+    "ICU",
+    "critical care",
+    "machine learning",
+    "artificial intelligence"
+]
+dependencies = [
+    "flask==2.2.2",
+    "scikit-learn==1.2.1", 
+    "torch",
+    "numpy==1.23.5",
+    "tqdm==4.64.1",
+    "pathlib==1.0.1",
+    "pandas==1.5.3",
+    "pillow==9.4.0",
+]
+requires-python = ">=3.8"
+
+[project.urls]
+Homepage = "https://github.com/smt970913/ConCareRL-Toolkit"
+Documentation = "https://github.com/smt970913/ConCareRL-Toolkit#readme"
+Repository = "https://github.com/smt970913/ConCareRL-Toolkit"
+"Bug Tracker" = "https://github.com/smt970913/ConCareRL-Toolkit/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "pytest-cov>=2.0", 
+    "black>=21.0",
+    "flake8>=3.8",
+    "jupyter>=1.0",
+    "notebook>=6.0",
+]
+models = [
+    "torch>=1.8.0",
+    "torchvision>=0.9.0",
+]
+viz = [
+    "matplotlib>=3.3.0",
+    "seaborn>=0.11.0",
+    "plotly>=5.0.0",
+]
+
+[project.scripts]
+concarerl-train = "ConCareRL.concarerl:main"
+concarerl-eval = "ConCareRL.concarerl:evaluate"
+
+[tool.setuptools]
+packages = ["ConCareRL"]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = {attr = "ConCareRL.__version__"}
+
+[tool.setuptools.package-data]
+ConCareRL = ["*.py"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38', 'py39', 'py310']
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"] 

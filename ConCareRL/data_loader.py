@@ -31,7 +31,7 @@ class TrainDataLoader:
         Args:
             action_name (str): Column name for action in outcome_df
             done_condition (callable, optional): Function to determine done condition.
-                Should accept (action, outcome_df, idx) and return done value.
+                Should accept the recorded done values in the outcome_df.
                 If None, uses the action as the done condition.
             num_constraint (int): Number of constraint costs to extract
         """
@@ -43,8 +43,7 @@ class TrainDataLoader:
 
             # Determine done condition
             if done_condition is not None:
-                # Use custom done condition function
-                done = done_condition(action, self.outcome_df, i)
+                done = self.outcome_df['done'].values[i]
             else:
                 done = action
             

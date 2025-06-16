@@ -549,8 +549,9 @@ class FQE:
     
         z = z_value  
         q_upper_bound = q_mean + z * (q_std / math.sqrt(n))
+        q_lower_bound = q_mean - z * (q_std / math.sqrt(n))
     
-        return q_mean.item(), q_upper_bound.item()
+        return q_mean.item(), q_upper_bound.item(), q_lower_bound.item()
 
     def save(self, path: str) -> None:
         """

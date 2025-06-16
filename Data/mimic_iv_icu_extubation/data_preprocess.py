@@ -23,13 +23,14 @@ import re
 
 import requests
 import json
+import pickle
 
 from threadpoolctl import threadpool_limits
 from joblib import Parallel, delayed
 
 class ICUDataInput:
     def __init__(self, d_items_path, input_events_path, pro_events_path, output_events_path, 
-                 icu_patient_path, d_labitems_path, admission_path, all_patients_path):
+                 icu_patient_path, d_labitems_path, admission_path, all_patients_path, data_compression = 'gzip'):
         self.d_items_data = None
         self.input_events_data = None
         self.pro_events_data = None
@@ -46,16 +47,17 @@ class ICUDataInput:
         self.d_labitems_path = d_labitems_path
         self.admission_path = admission_path
         self.all_patients_path = all_patients_path
+        self.data_compression = data_compression
 
     def load_data(self):
-        self.d_items_data = pd.read_csv(self.d_items_path, compression = 'gzip')
-        self.input_events_data = pd.read_csv(self.input_events_path, compression = 'gzip')
-        self.pro_events_data = pd.read_csv(self.pro_events_path, compression = 'gzip')
-        self.output_event_data = pd.read_csv(self.output_events_path, compression = 'gzip')
-        self.ICU_patient_data = pd.read_csv(self.icu_patient_path, compression = 'gzip')
-        self.d_labitems_data = pd.read_csv(self.d_labitems_path, compression = 'gzip')
-        self.admission_data = pd.read_csv(self.admission_path, compression = 'gzip')
-        self.patients_data = pd.read_csv(self.all_patients_path, compression = 'gzip')
+        self.d_items_data = pd.read_csv(self.d_items_path, compression = self.data_compression)
+        self.input_events_data = pd.read_csv(self.input_events_path, compression = self.data_compression)
+        self.pro_events_data = pd.read_csv(self.pro_events_path, compression = self.data_compression)
+        self.output_event_data = pd.read_csv(self.output_events_path, compression = self.data_compression)
+        self.ICU_patient_data = pd.read_csv(self.icu_patient_path, compression = self.data_compression)
+        self.d_labitems_data = pd.read_csv(self.d_labitems_path, compression = self.data_compression)
+        self.admission_data = pd.read_csv(self.admission_path, compression = self.data_compression)
+        self.patients_data = pd.read_csv(self.all_patients_path, compression = self.data_compression)
 
     def quick_process_data(self):
         self.icu_ad_list = pd.unique(self.ICU_patient_data["stay_id"])
@@ -118,7 +120,7 @@ class VariableSearch:
         prompt = f"Translate the following medical term to {target_language}. Only return the translation, no explanation: {keyword}"
         
         data = {
-            "model": "claude-3-sonnet-20240229",
+            "model": "claude-3-5-sonnet-20240620",
             "max_tokens": 50,
             "messages": [{"role": "user", "content": prompt}]
         }
@@ -221,22 +223,14 @@ class VariableSearch:
         return list(set(all_results))
 
 class VariableSelect:
-    def __init__(self, d_items_table, VitalSigns_id, GCS_score_id, Vent_para_id, Labs_id, General_id, ADT_id, Additional_id_1):
+    def __init__(self, d_items_table, item_id_list):
         self.d_items_data = d_items_table
 
         # Store 'item_id' lists
-        self.VitalSigns_id = VitalSigns_id
-        self.GCS_score_id = GCS_score_id
-        self.Vent_para_id = Vent_para_id
-        self.Labs_id = Labs_id
-        self.General_id = General_id
-        self.ADT_id = ADT_id
-        self.add_id_1 = Additional_id_1
+        self.variable_list = item_id_list
 
     def select_variables(self):
-        variable_list = self.VitalSigns_id + self.GCS_score_id + self.Vent_para_id + self.Labs_id + self.General_id + self.ADT_id + self.add_id_1
-
-        self.d_items_data = self.d_items_data[self.d_items_data['itemid'].isin(variable_list)]
+        self.d_items_data = self.d_items_data[self.d_items_data['itemid'].isin(self.variable_list)]
 
     def get_selected_data(self):
         return self.d_items_data
@@ -358,7 +352,7 @@ class PatientDataProcess:
         
         self.ICU_patient_data = self.ICU_patient_data.reset_index(drop = True)
 
-    def denote_death_cases(self, admission_data, patients_data, readmission_observation_days = 30):
+    def denote_death_cases(self, admission_data, patients_data, death_observation_days = 30):
 
         patients_data_select = patients_data.drop(columns = ['anchor_year', 'anchor_year_group'])
         admission_data_select = admission_data[['subject_id', 'hadm_id', 'admittime', 'dischtime', 'deathtime', 'admission_type', 'race']]
@@ -378,11 +372,11 @@ class PatientDataProcess:
         self.ICU_patient_data['TD_death_disch'] = self.ICU_patient_data['dod'] - self.ICU_patient_data['outtime']
 
         self.ICU_patient_data['death_in_ICU'] = 0
-        self.ICU_patient_data[f'death_out_ICU_{readmission_observation_days}_day'] = 0
+        self.ICU_patient_data[f'death_out_ICU_{death_observation_days}_day'] = 0
 
         self.ICU_patient_data.loc[self.ICU_patient_data['TD_death_disch'] <= pd.Timedelta(0), 'death_in_ICU'] = 1
         self.ICU_patient_data.loc[(self.ICU_patient_data['TD_death_disch'] > pd.Timedelta(0)) & 
-                                  (self.ICU_patient_data['TD_death_disch'] <= pd.Timedelta(days = readmission_observation_days)), f'death_out_ICU_{readmission_observation_days}_day'] = 1
+                                  (self.ICU_patient_data['TD_death_disch'] <= pd.Timedelta(days = death_observation_days)), f'death_out_ICU_{death_observation_days}_day'] = 1
 
         self.ICU_patient_data = self.ICU_patient_data.reset_index(drop = True)
 
@@ -409,7 +403,6 @@ class PatientDataProcess:
 
     def get_ICU_patient_data(self):
         return self.ICU_patient_data
-    
 
 class GenerateDataSet:
     def __init__(self, chart_events_data, d_items_data_chart, icu_patient_data):
@@ -623,7 +616,7 @@ class GenerateDataSet:
         self.generated_dataset['Blood Pressure Diastolic'] = self.generated_dataset.apply(self.assign_blood_pressure_diastolic, axis = 1)
         self.generated_dataset['Blood Pressure Mean'] = self.generated_dataset.apply(self.assign_blood_pressure_mean, axis = 1)
 
-        self.generated_dataset['Temperature Celsius'] = self.generated_dataset.apply(self.assign_temperature, axis = 1)
+        self.generated_dataset['Temperature C'] = self.generated_dataset.apply(self.assign_temperature, axis = 1)
         self.generated_dataset['SaO2'] = self.generated_dataset.apply(self.assign_SaO2, axis = 1)
 
         self.generated_dataset['GCS Score'] = self.generated_dataset.apply(self.assign_gcs_score, axis = 1)
@@ -727,13 +720,19 @@ class PatientDataImputation:
     def drop_columns(self, var_list = []):
         self.generated_dataset = self.generated_dataset.drop(columns = var_list)
 
-    def drop_missing_columns(self, var_list = [], missing_threshold = 0.75):
+    def classify_missing_columns(self, var_list = [], missing_threshold_1 = 0.75, missing_threshold_2 = 0.10):
         drop_list = []
+        middle_list = []
+        knn_list = []
         for i in var_list:
-            if (self.generated_dataset[i].isnull().sum()/len(self.generated_dataset)) > missing_threshold:
+            if (self.generated_dataset[i].isnull().sum()/len(self.generated_dataset)) > missing_threshold_1:
                 drop_list.append(i)
+            elif ((self.generated_dataset[i].isnull().sum()/len(self.generated_dataset)) <= missing_threshold_1) and ((self.generated_dataset[i].isnull().sum()/len(self.generated_dataset)) >= missing_threshold_2):
+                middle_list.append(i)
+            else:
+                knn_list.append(i)
         
-        return drop_list
+        return drop_list, middle_list, knn_list
 
     def forward_fill_missing_values(self, var_list = []):
         for i in range(len(var_list)):
@@ -747,7 +746,9 @@ class PatientDataImputation:
         chunk_imputed = imputer.fit_transform(chunk)  
         return chunk_imputed
 
-    def knn_impute_missing_values(self, num_neigh = 5, scaler = MinMaxScaler(), chunk_size = 10000, num_jobs = 60):
+    def knn_impute_missing_values(self, num_neigh = 5, 
+                                  scaler = MinMaxScaler(), 
+                                  chunk_size = 10000, num_jobs = 60):
 
         num_threads = os.cpu_count()
         print(f"Available CPU threads: {num_threads}")
@@ -781,7 +782,7 @@ class PatientDataImputation:
         )
 
         self.generated_dataset_pre[columns_with_missing_values] = pd.concat(
-            [pd.DataFrame(result, columns = columns_with_missing_values) for result in results],
+            [pd.DataFrame(result, columns = columns_with_missing_values) for result in results], 
             ignore_index = True
         )
 
@@ -797,13 +798,15 @@ class StateSpaceBuilder:
         self.generated_dataset = generated_dataset.copy()
         self.rl_cont_state_table = None
         self.state_id_table = None
+        self.scaler = None  # Store the fitted scaler
+        self.scaler_feature_names = None  # Store the feature names used for scaling
 
     def drop_duplicate_rows(self):
         self.generated_dataset = self.generated_dataset.drop_duplicates()
         m = self.generated_dataset[self.generated_dataset['discharge_action'] == 1]
         duplicates = m[m.duplicated(subset=['stay_id'])]
         if len(duplicates) > 0:
-            print(f"Attention!!! Found {len(duplicates)} duplicate rows in the dataset")
+            print(f"Attention!!! Found {len(duplicates)} duplicate rows in the dataset! Please check the dataset manually.")
             self.generated_dataset = self.generated_dataset.drop(duplicates.index)
         else:
             print("No duplicate rows found in the dataset")
@@ -893,6 +896,15 @@ class StateSpaceBuilder:
         self.state_id_table['los_costs_scaled'] = 0
         self.state_id_table[['los_costs_scaled']] = scaler.fit_transform(self.state_id_table[['los_costs']])
 
+    def discharge_done_condition(self):
+        self.state_id_table['done'] = 0.0
+        
+        condition_1 = (self.state_id_table['discharge_action'] == 1) & (self.state_id_table['death'] == 1) & (self.state_id_table['discharge_fail'] != 1)
+        self.state_id_table.loc[condition_1, 'done'] = 1.0
+
+        condition_2 = (self.state_id_table['discharge_action'] == 1) & (self.state_id_table['death'] != 1) & (self.state_id_table['discharge_fail'] != 1)
+        self.state_id_table.loc[condition_2, 'done'] = 1.0
+
     def qSOFA_safe_action_space(self):
         safe_condition = (self.state_id_table['qSOFA'] == 0) | (self.state_id_table['qSOFA'] == 1)
         unsafe_condition = (self.state_id_table['qSOFA'] == 2) | (self.state_id_table['qSOFA'] == 3)
@@ -915,7 +927,13 @@ class StateSpaceBuilder:
 
         var_list = self.rl_cont_state_table.columns.tolist()
         self.rl_cont_state_table_scaled = self.rl_cont_state_table.copy()
-        self.rl_cont_state_table_scaled[var_list] = scaler.fit_transform(self.rl_cont_state_table[var_list])
+        
+        # Store the scaler and feature names for later use
+        self.scaler = scaler
+        self.scaler_feature_names = var_list
+        
+        # Fit and transform the data
+        self.rl_cont_state_table_scaled[var_list] = self.scaler.fit_transform(self.rl_cont_state_table[var_list])
         self.rl_cont_state_table_scaled['M'] = self.rl_cont_state_table['M'].copy()
         self.rl_cont_state_table_scaled['readmission_count_original'] = self.rl_cont_state_table['readmission_count'].copy()
 
@@ -960,9 +978,140 @@ class StateSpaceBuilder:
     
         return score
     
+    def save_scaler(self, file_path, save_feature_names = True):
+        """
+        Save the fitted scaler to a file for later use
+        
+        Parameters:
+        - file_path: Path to save the scaler (should end with .pkl)
+        - save_feature_names: Whether to save feature names (default: True)
+                              If False, only saves the scaler object for simpler usage
+        """
+        if self.scaler is None:
+            raise ValueError("Scaler has not been fitted yet. Please run train_val_test_split first.")
+        
+        if save_feature_names:
+            scaler_data = {
+                'scaler': self.scaler,
+                'feature_names': self.scaler_feature_names
+            }
+        else:
+            # Simple version: only save the scaler object
+            scaler_data = self.scaler
+        
+        with open(file_path, 'wb') as f:
+            pickle.dump(scaler_data, f)
+        
+        if save_feature_names:
+            print(f"Scaler with feature names saved to {file_path}")
+        else:
+            print(f"Scaler (simplified) saved to {file_path}")
+    
+    def load_scaler(self, file_path, has_feature_names = None):
+        """
+        Load a previously saved scaler
+        
+        Parameters:
+        - file_path: Path to the saved scaler file
+        - has_feature_names: None (auto-detect), True, or False
+        """
+        with open(file_path, 'rb') as f:
+            scaler_data = pickle.load(f)
+        
+        # Auto-detect format if not specified
+        if has_feature_names is None:
+            if isinstance(scaler_data, dict):
+                has_feature_names = True
+            else:
+                has_feature_names = False
+        
+        if has_feature_names:
+            self.scaler = scaler_data['scaler']
+            self.scaler_feature_names = scaler_data['feature_names']
+            print(f"Scaler loaded from {file_path}")
+            print(f"Feature names: {self.scaler_feature_names}")
+        else:
+            self.scaler = scaler_data
+            self.scaler_feature_names = None
+            print(f"Scaler (simplified) loaded from {file_path}")
+            print("Note: No feature names available - ensure data order consistency")
+    
+    def get_scaler(self):
+        """
+        Get the fitted scaler object
+        
+        Returns:
+        - scaler: The fitted MinMaxScaler object
+        """
+        if self.scaler is None:
+            raise ValueError("Scaler has not been fitted yet. Please run train_val_test_split first.")
+        return self.scaler
+    
+    def get_scaler_params(self):
+        """
+        Get the scaler parameters (min_, scale_, etc.)
+        
+        Returns:
+        - dict: Dictionary containing scaler parameters and optionally feature names
+        """
+        if self.scaler is None:
+            raise ValueError("Scaler has not been fitted yet. Please run train_val_test_split first.")
+        
+        params = {
+            'min_': self.scaler.min_,
+            'scale_': self.scaler.scale_,
+            'data_min_': self.scaler.data_min_,
+            'data_max_': self.scaler.data_max_,
+            'data_range_': self.scaler.data_range_,
+        }
+        
+        # Add feature names if available
+        if self.scaler_feature_names is not None:
+            params['feature_names'] = self.scaler_feature_names
+        
+        return params
+    
+    def transform_new_data(self, data, validate_features = True):
+        """
+        Transform new data using the fitted scaler
+        
+        Parameters:
+        - data: DataFrame with the same features as training data
+        - validate_features: Whether to validate feature names (default: True)
+                           Set to False for simplified usage without feature name checking
+        
+        Returns:
+        - transformed_data: DataFrame with scaled features
+        """
+        if self.scaler is None:
+            raise ValueError("Scaler has not been fitted yet. Please run train_val_test_split first.")
+        
+        # Create a copy of the data
+        transformed_data = data.copy()
+        
+        if validate_features and self.scaler_feature_names is not None:
+            # Check if all required features are present
+            missing_features = set(self.scaler_feature_names) - set(data.columns)
+            if missing_features:
+                raise ValueError(f"Missing features in input data: {missing_features}")
+            
+            # Transform only the features that were used in training
+            transformed_data[self.scaler_feature_names] = self.scaler.transform(data[self.scaler_feature_names])
+        else:
+            # Simplified mode: transform all numeric columns
+            if self.scaler_feature_names is not None:
+                # Use saved feature names if available
+                transformed_data[self.scaler_feature_names] = self.scaler.transform(data[self.scaler_feature_names])
+            else:
+                # No feature names saved, assume user provides data in correct order
+                numeric_columns = data.select_dtypes(include=[np.number]).columns.tolist()
+                if len(numeric_columns) != len(self.scaler.min_):
+                    print(f"Warning: Expected {len(self.scaler.min_)} features, got {len(numeric_columns)}")
+                    print("Ensure data is in the same order as training data")
+                
+                transformed_data[numeric_columns] = self.scaler.transform(data[numeric_columns])
+        
+        return transformed_data
+    
     def save_to_csv(self, dataset, file_path):
         dataset.to_csv(file_path, index = False)
-    
-
-
-        

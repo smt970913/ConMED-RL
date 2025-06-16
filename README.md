@@ -45,8 +45,8 @@ ICU-Decision Making-OCRL/
 │   │   └── data_preprocess.py               # MIMIC-IV extubation data preprocessing
 │   ├── mimic_iv_icu_discharge/         
 │   │   └── data_preprocess.py               # MIMIC-IV discharge data preprocessing
-│   ├── salzburg_icu_extubation/             # Salzburg extubation dataset
-│   └── salzburg_icu_discharge/              # Salzburg discharge dataset
+│   ├── SICdb_extubation/                    # Salzburg extubation dataset
+│   └── SICdb_discharge/                     # Salzburg discharge dataset
 │
 ├── Experiment Notebook/                     # Jupyter notebooks for experiments
 │   ├── Example_MIMIC-IV_Extubation_Decision_Making.ipynb
@@ -246,7 +246,7 @@ The toolkit requires the following main dependencies:
 The datasets are organized in the `Data/` folder with separate subdirectories for different clinical scenarios (discharge decision-making and extubation decision-making) and data sources (MIMIC-IV and SICdb).
 
 #### Data Preprocessing Scripts
-We provide data preprocessing scripts in `Data/*/data_preprocess.py` for different datasets and research questions. Since we designed a general framework for processing public medical research datasets into formats suitable for sequential decision-making and offline reinforcement learning research, these preprocessing scripts share similar structures and methodologies.
+The toolkit includes specialized data preprocessing scripts located in `Data/*/data_preprocess.py` that transform diverse clinical datasets into standardized formats compatible with sequential decision-making frameworks. Our unified preprocessing architecture employs consistent Python classes and functions across all four `data_preprocess.py` implementations, with dataset-specific variations limited to the data selection phase. This design choice ensures reproducible data transformations while maintaining the flexibility needed to accommodate the unique characteristics of different medical datasets and research objectives.
 
 **Key Feature**: Our preprocessing pipeline is implemented entirely in `Python` using `Dask` for efficient processing of large-scale clinical datasets (e.g., chartevents tables), **eliminating the need for SQL databases or complex data infrastructure**. This approach significantly simplifies the setup process and enhances reproducibility for researchers.
 

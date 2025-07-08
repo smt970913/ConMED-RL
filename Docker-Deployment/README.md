@@ -213,8 +213,7 @@ If you're migrating from the old Docker setup:
 
 2. **Remove old images:**
    ```bash
-   docker rmi medical-app
-   docker rmi concarerl
+   docker rmi conmedrl
    ```
 
 3. **Use new deployment:**

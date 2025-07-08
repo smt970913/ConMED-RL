@@ -1,6 +1,6 @@
-# ConCare-RL Library Usage Guide
+# ConMED-RL Library Usage Guide
 
-This document provides a comprehensive guide on how to use ConCare-RL as a Python library for your own research and development projects.
+This document provides a comprehensive guide on how to use ConMED-RL as a Python library for your own research and development projects.
 
 ## Installation
 
@@ -21,8 +21,8 @@ pip install -e .
 ### Basic Usage
 
 ```python
-import ConCareRL
-from ConCareRL import FQE, FQI, RLTraining, RLConfigurator
+import ConMedRL
+from ConMedRL import FQE, FQI, RLTraining, RLConfigurator
 import numpy as np
 import torch
 
@@ -56,7 +56,7 @@ print(f"Average policy value: {np.mean(policy_values)}")
 ### Advanced Usage with Constraints
 
 ```python
-from ConCareRL import FQI, ReplayBuffer
+from ConMedRL import FQI, ReplayBuffer
 
 # Create replay buffer for experience storage
 buffer = ReplayBuffer(capacity=10000, state_dim=10, action_dim=3)
@@ -93,7 +93,7 @@ print(f"Optimal actions: {optimal_actions}")
 ### Using Pre-trained Models
 
 ```python
-from ConCareRL import RLTraining
+from ConMedRL import RLTraining
 import pickle
 
 # Load a pre-trained model
@@ -109,7 +109,7 @@ print(f"Model predictions shape: {predictions.shape}")
 ### Data Processing
 
 ```python
-from ConCareRL.data_loader import TrainDataLoader, ValTestDataLoader
+from ConMedRL.data_loader import TrainDataLoader, ValTestDataLoader
 
 # Initialize data loaders
 train_loader = TrainDataLoader(
@@ -139,7 +139,7 @@ print(f"Validation data shape: {val_data['states'].shape}")
 ### ICU Extubation Decision Support
 
 ```python
-from ConCareRL import FQE, FQI
+from ConMedRL import FQE, FQI
 import pandas as pd
 
 # Load clinical data

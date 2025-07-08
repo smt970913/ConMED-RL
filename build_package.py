@@ -92,7 +92,7 @@ def test_install():
     else:  # Unix/Linux/Mac
         python_cmd = "test_env/bin/python"
     
-    run_command(f"{python_cmd} -c \"import ConCareRL; print('ConCare-RL imported successfully')\"", 
+    run_command(f"{python_cmd} -c \"import ConMedRL; print('ConMedRL imported successfully')\"", 
                 "Testing import")
     
     # Cleanup test environment

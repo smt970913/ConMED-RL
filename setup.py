@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Setup script for ConCare-RL: An OCRL-Based Toolkit for Critical Decision Support
+Setup script for ConMED-RL: An OCRL-Based Toolkit for Medical Decision Support
 """
 
 from setuptools import setup, find_packages
@@ -18,10 +18,10 @@ except UnicodeDecodeError:
     with open("requirements.txt", "r", encoding="utf-8-sig") as fh:
         requirements = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
 
-# Read version from ConCareRL/__init__.py
+# Read version from ConMED_RL/__init__.py
 def get_version():
     """Extract version from __init__.py"""
-    version_file = os.path.join("ConCareRL", "__init__.py")
+    version_file = os.path.join("ConMedRL", "__init__.py")
     with open(version_file, "r") as f:
         for line in f:
             if line.startswith("__version__"):
@@ -36,13 +36,13 @@ setup(
     description="An Offline Constrained Reinforcement Learning Toolkit for Critical Care Decision Making",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/smt970913/ConCareRL-Toolkit",
+    url="https://github.com/smt970913/ConMED-RL",
     project_urls={
-        "Bug Tracker": "https://github.com/smt970913/ConCareRL-Toolkit/issues",
-        "Documentation": "https://github.com/smt970913/ConCareRL-Toolkit#readme",
-        "Source Code": "https://github.com/smt970913/ConCareRL-Toolkit",
+        "Bug Tracker": "https://github.com/smt970913/ConMED-RL/issues",
+        "Documentation": "https://github.com/smt970913/ConMED-RL#readme",
+        "Source Code": "https://github.com/smt970913/ConMED-RL",
     },
-    packages=find_packages(include=["ConCareRL", "ConCareRL.*", "concarerl", "concarerl.*"]),
+    packages=find_packages(include=["ConMedRL", "ConMedRL.*", "conmedrl", "conmedrl.*"]),
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Healthcare Industry",
@@ -84,7 +84,7 @@ setup(
             "models/*.pth",
             "data/templates/*.json",
         ],
-        "ConCareRL": [
+        "ConMedRL": [
             "*.py",
         ]
     },
@@ -103,8 +103,8 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "concarerl-train=ConCareRL.concarerl:main",
-            "concarerl-eval=ConCareRL.concarerl:evaluate",
+            "conmedrl-train=ConMedRL.conmedrl:main",
+            "conmedrl-eval=ConMedRL.conmedrl:evaluate",
         ],
     },
 )

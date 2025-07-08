@@ -53,10 +53,10 @@ dependencies = [
 requires-python = ">=3.8"
 
 [project.urls]
-Homepage = "https://github.com/smt970913/ConCareRL-Toolkit"
-Documentation = "https://github.com/smt970913/ConCareRL-Toolkit#readme"
-Repository = "https://github.com/smt970913/ConCareRL-Toolkit"
-"Bug Tracker" = "https://github.com/smt970913/ConCareRL-Toolkit/issues"
+Homepage = "https://github.com/smt970913/ConMED-RL"
+Documentation = "https://github.com/smt970913/ConMED-RL#readme"
+Repository = "https://github.com/smt970913/ConMED-RL"
+"Bug Tracker" = "https://github.com/smt970913/ConMED-RL/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -78,18 +78,18 @@ viz = [
 ]
 
 [project.scripts]
-concarerl-train = "ConCareRL.concarerl:main"
-concarerl-eval = "ConCareRL.concarerl:evaluate"
+conmedrl-train = "ConMedRL.conmedrl:main"
+conmedrl-eval = "ConMedRL.conmedrl:evaluate"
 
 [tool.setuptools]
-packages = ["ConCareRL"]
+packages = ["ConMedRL"]
 include-package-data = true
 
 [tool.setuptools.dynamic]
-version = {attr = "ConCareRL.__version__"}
+version = {attr = "ConMedRL.__version__"}
 
 [tool.setuptools.package-data]
-ConCareRL = ["*.py"]
+ConMedRL = ["*.py"]
 
 [tool.black]
 line-length = 88

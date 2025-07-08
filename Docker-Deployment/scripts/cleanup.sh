@@ -61,7 +61,7 @@ case $choice in
         docker-compose -f docker-compose.prod.yml --profile monitoring down --remove-orphans 2>/dev/null || true
         
         # Remove any remaining ConCare-RL containers
-        CONTAINERS=$(docker ps -a --filter "name=concarerl" --format "{{.ID}}")
+        CONTAINERS=$(docker ps -a --filter "name=conmedrl" --format "{{.ID}}")
         if [ ! -z "$CONTAINERS" ]; then
             echo "$CONTAINERS" | xargs docker rm -f
             print_status "Removed ConCare-RL containers."
@@ -76,7 +76,7 @@ case $choice in
         docker-compose -f docker-compose.prod.yml --profile monitoring down 2>/dev/null || true
         
         # Remove ConCare-RL images
-        IMAGES=$(docker images --filter "reference=*concarerl*" --format "{{.ID}}")
+        IMAGES=$(docker images --filter "reference=*conmedrl*" --format "{{.ID}}")
         if [ ! -z "$IMAGES" ]; then
             echo "$IMAGES" | xargs docker rmi -f
             print_status "Removed ConCare-RL images."
@@ -98,19 +98,19 @@ case $choice in
             docker-compose -f docker-compose.prod.yml --profile monitoring down --volumes --remove-orphans 2>/dev/null || true
             
             # Remove ConCare-RL containers
-            CONTAINERS=$(docker ps -a --filter "name=concarerl" --format "{{.ID}}")
+            CONTAINERS=$(docker ps -a --filter "name=conmedrl" --format "{{.ID}}")
             if [ ! -z "$CONTAINERS" ]; then
                 echo "$CONTAINERS" | xargs docker rm -f
             fi
             
             # Remove ConCare-RL images
-            IMAGES=$(docker images --filter "reference=*concarerl*" --format "{{.ID}}")
+            IMAGES=$(docker images --filter "reference=*conmedrl*" --format "{{.ID}}")
             if [ ! -z "$IMAGES" ]; then
                 echo "$IMAGES" | xargs docker rmi -f
             fi
             
             # Remove ConCare-RL volumes
-            VOLUMES=$(docker volume ls --filter "name=*concarerl*" --format "{{.Name}}")
+            VOLUMES=$(docker volume ls --filter "name=*conmedrl*" --format "{{.Name}}")
             if [ ! -z "$VOLUMES" ]; then
                 echo "$VOLUMES" | xargs docker volume rm
             fi

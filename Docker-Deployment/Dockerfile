@@ -54,7 +54,7 @@ ENV PYTHONPATH=/app \
     LOG_LEVEL=INFO
 
 # Copy application files with proper ownership
-COPY --chown=appuser:appuser ../ConCareRL ./ConCareRL/
+COPY --chown=appuser:appuser ../ConMedRL ./ConMedRL/
 COPY --chown=appuser:appuser ../CDM-Software ./CDM-Software/
 COPY --chown=appuser:appuser ../Software_FQE_models ./Software_FQE_models/
 COPY --chown=appuser:appuser ../image ./image/

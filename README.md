@@ -1,4 +1,4 @@
-# ConMED-RL: An OCRL-Based Toolkit for Critical Decision Support
+# ConMED-RL: An OCRL-Based Toolkit for Medical Decision Support
 
 <div style="text-align: center;">
     <img src="image/ConMED-RL Logo.png" width="400">
@@ -20,7 +20,7 @@ ICU-Decision Making-OCRL/
 │   ├── run_app.bat                          # Application runner (Windows)
 │   └── DEPLOYMENT_GUIDE.md                  # Deployment documentation
 │
-├── ConMED-RL/                               # Core OCRL framework
+├── ConMedRL/                                # Core OCRL framework
 │   ├── __init__.py                          # Package initialization
 │   ├── conmedrl.py                          # Main OCRL implementation - discrete action space
 │   ├── conmedrl_continuous.py               # Main OCRL implementation - continuous action space

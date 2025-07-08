@@ -30,7 +30,7 @@ class TrainDataLoader:
         
         Args:
             action_name (str): Column name for action in outcome_df
-            done_condition (callable, optional): Function to determine done condition.
+            done_condition (callable, optional):
                 Should accept the recorded done values in the outcome_df.
                 If None, uses the action as the done condition.
             num_constraint (int): Number of constraint costs to extract

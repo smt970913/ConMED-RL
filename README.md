@@ -1,7 +1,7 @@
-# ConCare-RL: An OCRL-Based Toolkit for Critical Decision Support
+# ConMED-RL: An OCRL-Based Toolkit for Critical Decision Support
 
 <div style="text-align: center;">
-    <img src="image/ConCare-RL Logo.png" width="400">
+    <img src="image/ConMED-RL Logo.png" width="400">
 </div>
 
 This repository provides the implementation of an **Offline Constrained Reinforcement Learning (OCRL)** - based decision support toolkit for critical care decision-making. The toolkit is developed based on our research on **ICU extubation** and **discharge** decision-making. It builds on our studies in modeling and optimizing clinical decisions under uncertainty in the ICU setting.
@@ -20,11 +20,11 @@ ICU-Decision Making-OCRL/
 │   ├── run_app.bat                          # Application runner (Windows)
 │   └── DEPLOYMENT_GUIDE.md                  # Deployment documentation
 │
-├── ConCareRL/                               # Core OCRL framework
+├── ConMED-RL/                               # Core OCRL framework
 │   ├── __init__.py                          # Package initialization
-│   ├── concarerl.py                         # Main OCRL implementation
+│   ├── conmedrl.py                          # Main OCRL implementation - discrete action space
+│   ├── conmedrl_continuous.py               # Main OCRL implementation - continuous action space
 │   ├── data_loader.py                       # DataLoader for sampling transitions
-│   └── done_condition_function_examples.py  # Terminal condition examples
 │
 ├── Docker-Deployment/                       # Docker deployment configurations
 │   ├── README.md                            # Docker deployment guide
@@ -73,7 +73,7 @@ ICU-Decision Making-OCRL/
 
 ## Installation Guideline
 
-ConCare-RL supports multiple installation methods to accommodate different use cases and environments. Choose the method that best fits your needs:
+ConMED-RL supports multiple installation methods to accommodate different use cases and environments. Choose the method that best fits your needs:
 
 ### Prerequisites
 
@@ -92,15 +92,15 @@ ConCare-RL supports multiple installation methods to accommodate different use c
 2. **Create a virtual environment:**
    ```bash
    # Using conda (recommended)
-   conda create -n concarerl python=3.10.14
-   conda activate concarerl
+   conda create -n ConMEDrl python=3.10.14
+   conda activate ConMEDrl
    
    # OR using venv
-   python -m venv concarerl_env
+   python -m venv ConMEDrl_env
    # On Windows:
-   concarerl_env\Scripts\activate
+   ConMEDrl_env\Scripts\activate
    # On Linux/Mac:
-   source concarerl_env/bin/activate
+   source ConMEDrl_env/bin/activate
    ```
 
 3. **Install dependencies:**
@@ -115,7 +115,7 @@ ConCare-RL supports multiple installation methods to accommodate different use c
 
 5. **Verify installation:**
    ```bash
-   python -c "import ConCareRL.concarerl; print('ConCare-RL installed successfully!')"
+   python -c "import ConMEDRL.ConMEDrl; print('ConMED-RL installed successfully!')"
    ```
 
 ### Method 2: Docker Installation (Recommended for Production)
@@ -160,18 +160,18 @@ ConCare-RL supports multiple installation methods to accommodate different use c
 
 ### Method 3: PyPI Installation (Recommended for Core Framework)
 
-For the core ConCare-RL framework without the web application:
+For the core ConMED-RL framework without the web application:
 
 ```bash
 # Install from PyPI (when published)
-pip install concarerl
+pip install ConMEDrl
 
 # Or install directly from GitHub
 pip install git+https://github.com/your-username/ICU-Decision-Making-OCRL.git
 
 # Install with optional dependencies
-pip install concarerl[models,viz]  # For visualization and model utilities
-pip install concarerl[dev]         # For development tools
+pip install ConMEDrl[models,viz]  # For visualization and model utilities
+pip install ConMEDrl[dev]         # For development tools
 ```
 
 ### Quick Start for Different Use Cases
@@ -193,10 +193,10 @@ pip install concarerl[dev]         # For development tools
 
 #### For Custom Development:
 1. Follow **Method 1** (Local Installation)
-2. Import ConCare-RL components:
+2. Import ConMED-RL components:
    ```python
-   from ConCareRL.concarerl import FQE, FQI, RLTraining
-   from ConCareRL.data_loader import TrainDataLoader, ValTestDataLoader
+   from ConMEDRL.ConMEDrl import FQE, FQI, RLTraining
+   from ConMEDRL.data_loader import TrainDataLoader, ValTestDataLoader
    ```
 
 ### Dependencies Overview
@@ -238,7 +238,7 @@ The toolkit requires the following main dependencies:
 
 ## Implementation Guideline
 <div style="text-align: center;">
-    <img src="image/ConCareRL_pipeline.svg" width = 1400> 
+    <img src="image/ConMED-RL_pipeline.svg" width = 1400> 
 </div>
 
 ### Dataset Module
@@ -273,11 +273,11 @@ Please ensure you have the appropriate permissions and follow all data use agree
     <img src="image/dataset_usage.svg" width = 500> 
 </div>
 
-The OCRL Algorithm Module is the core component of ConCare-RL, implementing state-of-the-art offline constrained reinforcement learning algorithms specifically designed for critical care decision-making problems. This module bridges the gap between preprocessed clinical data and actionable decision support models.
+The OCRL Algorithm Module is the core component of ConMED-RL, implementing state-of-the-art offline constrained reinforcement learning algorithms specifically designed for critical care decision-making problems. This module bridges the gap between preprocessed clinical data and actionable decision support models.
 
 #### Data Loading and Management
 
-The `ConCareRL/data_loader.py` module transforms preprocessed pandas DataFrames into training-ready formats for offline reinforcement learning algorithms. This lightweight framework handles numerical data loading and batch preparation for model training. Alternatively, researchers can use the generated **Outcome Table** and **State Table** directly to construct MDP environments with established Python RL libraries such as `d3rlpy`.
+The `ConMEDRL/data_loader.py` module transforms preprocessed pandas DataFrames into training-ready formats for offline reinforcement learning algorithms. This lightweight framework handles numerical data loading and batch preparation for model training. Alternatively, researchers can use the generated **Outcome Table** and **State Table** directly to construct MDP environments with established Python RL libraries such as `d3rlpy`.
 
 **Core Components** - `data_loader.py`:
 
@@ -315,7 +315,7 @@ State/Outcome Tables → Buffer Loading → Memory Sampling → Batched Tensors 
 
 #### Core OCRL Framework
 
-The `ConCareRL/concarerl.py` module implements the complete offline constrained reinforcement learning (OCRL) framework, featuring advanced algorithms specifically adapted for constrained medical decision-making.
+The `ConMEDRL/ConMEDrl.py` module implements the complete offline constrained reinforcement learning (OCRL) framework, featuring advanced algorithms specifically adapted for constrained medical decision-making.
 
 **Approximation Model Architectures:**
 
@@ -465,8 +465,8 @@ A `Flask`-based web application that provides an intuitive interface for clinica
 ```
 Patient Data Input → Data Preprocessing → Model Selection → OCRL Prediction → Clinical Decision Support
        ↓                    ↓                  ↓               ↓                    ↓
-37 Physiological → MinMax Scaling → FQE Model → Risk Assessment → Physician Review
-   Parameters                                                                      ↓
+Physiological → MinMax Scaling → FQE Model → Risk Assessment → Physician Review
+Parameters                                                                      ↓
                                                                           Clinical Decision
 ```
 

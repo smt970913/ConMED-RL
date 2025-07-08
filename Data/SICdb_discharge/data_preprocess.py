@@ -1,3 +1,50 @@
+"""
+SICdb (Salzburg Intensive Care Database) Data Processing Module for ICU Discharge Decision Making
+
+This module has been adapted from MIMIC-IV format to support SICdb database structure.
+
+Key Adaptations Made:
+===================
+
+1. ICUDataInput Class:
+   - Modified to handle SICdb data structure with CaseID and PatientID
+   - Uses: cases_data, d_references_data, laboratory_data, medication_data, 
+           data_float_h_data, data_range_data, data_ref_data
+
+2. Variable Name Mappings:
+   - stay_id → CaseID (ICU stay identifier)
+   - subject_id → PatientID (Patient identifier)  
+   - hadm_id → Removed (not available in SICdb)
+   - anchor_age → age (Patient age field)
+
+3. Column Processing:
+   - ChartEventsProcess: Updated column selection to use PatientID, CaseID
+   - Conditional handling of 'storetime' field (may not exist in SICdb)
+
+4. Patient Data Processing:
+   - All readmission logic adapted for CaseID/PatientID
+   - Death case processing handles missing fields like anchor_year, anchor_year_group
+   - Conditional processing for 'race' field availability
+
+5. Dataset Generation:
+   - Time series generation using CaseID instead of stay_id
+   - Weight processing using CaseID for merging
+
+6. Data Imputation & State Space:
+   - All groupby operations use CaseID instead of stay_id
+   - Train/test splits based on PatientID
+   - Duplicate detection based on CaseID
+
+Usage Notes:
+===========
+- Ensure your SICdb data uses 'CaseID' and 'PatientID' as primary identifiers
+- Some MIMIC-IV specific fields (hadm_id, anchor_year) are handled conditionally
+- The 'age' field should be available in your patient data
+- Chart events should include 'charttime' field; 'storetime' is optional
+
+Author: Adapted for SICdb database structure
+"""
+
 import pandas as pd
 from collections import Counter
 
@@ -29,45 +76,44 @@ from threadpoolctl import threadpool_limits
 from joblib import Parallel, delayed
 
 class ICUDataInput:
-    def __init__(self, d_items_path, input_events_path, pro_events_path, output_events_path, 
-                 icu_patient_path, d_labitems_path, admission_path, all_patients_path, data_compression = 'gzip'):
-        self.d_items_data = None
-        self.input_events_data = None
-        self.pro_events_data = None
-        self.output_event_data = None
-        self.ICU_patient_data = None
-        self.d_labitems_data = None
+    def __init__(self, cases_path, d_references_path, laboratory_path, medication_path, 
+                 data_float_h_path, data_range_path, data_ref_path, data_compression='gzip'):
+        # main data
+        self.cases_data = None  # icu_stays in MIMIC-IV
+        self.d_references_data = None  
+        self.laboratory_data = None  
+        self.medication_data = None  
+        self.data_float_h_data = None  
+        self.data_range_data = None  
+        self.data_ref_data = None  
         
-        # Store file paths
-        self.d_items_path = d_items_path
-        self.input_events_path = input_events_path
-        self.pro_events_path = pro_events_path
-        self.output_events_path = output_events_path
-        self.icu_patient_path = icu_patient_path
-        self.d_labitems_path = d_labitems_path
-        self.admission_path = admission_path
-        self.all_patients_path = all_patients_path
+        self.cases_path = cases_path
+        self.d_references_path = d_references_path
+        self.laboratory_path = laboratory_path
+        self.medication_path = medication_path
+        self.data_float_h_path = data_float_h_path
+        self.data_range_path = data_range_path
+        self.data_ref_path = data_ref_path
         self.data_compression = data_compression
 
     def load_data(self):
-        self.d_items_data = pd.read_csv(self.d_items_path, compression = self.data_compression)
-        self.input_events_data = pd.read_csv(self.input_events_path, compression = self.data_compression)
-        self.pro_events_data = pd.read_csv(self.pro_events_path, compression = self.data_compression)
-        self.output_event_data = pd.read_csv(self.output_events_path, compression = self.data_compression)
-        self.ICU_patient_data = pd.read_csv(self.icu_patient_path, compression = self.data_compression)
-        self.d_labitems_data = pd.read_csv(self.d_labitems_path, compression = self.data_compression)
-        self.admission_data = pd.read_csv(self.admission_path, compression = self.data_compression)
-        self.patients_data = pd.read_csv(self.all_patients_path, compression = self.data_compression)
+        self.cases_data = pd.read_csv(self.cases_path, compression = self.data_compression)
+        self.d_references_data = pd.read_csv(self.d_references_path, compression = self.data_compression)
+        self.laboratory_data = pd.read_csv(self.laboratory_path, compression = self.data_compression)
+        self.medication_data = pd.read_csv(self.medication_path, compression = self.data_compression)
+        self.data_float_h_data = pd.read_csv(self.data_float_h_path, compression = self.data_compression)
+        self.data_range_data = pd.read_csv(self.data_range_path, compression = self.data_compression)
+        self.data_ref_data = pd.read_csv(self.data_ref_path, compression = self.data_compression)
 
     def quick_process_data(self):
-        self.icu_ad_list = pd.unique(self.ICU_patient_data["stay_id"])
-        self.patient_list = pd.unique(self.ICU_patient_data["subject_id"])
+        self.cases_list = pd.unique(self.cases_data["CaseID"])
+        self.patient_list = pd.unique(self.cases_data["PatientID"])
 
-    def get_icu_patient_data(self):
-        return self.ICU_patient_data
+    def get_cases_data(self):
+        return self.cases_data
 
-    def get_icu_ad_list(self):
-        return self.icu_ad_list
+    def get_cases_list(self):
+        return self.cases_list
 
     def get_patient_list(self):
         return self.patient_list
@@ -278,7 +324,7 @@ class ChartEventsProcess:
             print(f"Error computing DataFrame: {e}")
 
     def select_columns(self):
-        names_select = ['subject_id', 'stay_id', 'itemid', 'charttime', 'value', 'valuenum', 'valueuom']
+        names_select = ['PatientID', 'CaseID', 'itemid', 'charttime', 'value', 'valuenum', 'valueuom']
         self.chart_events_data = self.chart_events_data[names_select]
 
     def get_chart_events_data(self):
@@ -312,59 +358,78 @@ class PatientDataProcess:
         self.ICU_patient_data['TD_LOS'] = (self.ICU_patient_data['outtime'] - self.ICU_patient_data['intime']).dt.days
 
     def denote_readmission_cases(self, readmission_observation_days = 30):
-        self.ICU_patient_data = self.ICU_patient_data.sort_values(by = ['subject_id', 'intime'])
+        self.ICU_patient_data = self.ICU_patient_data.sort_values(by = ['PatientID', 'intime'])
         self.ICU_patient_data = self.ICU_patient_data.reset_index(drop = True)
 
-        pa_list = pd.unique(self.ICU_patient_data['subject_id'])
+        pa_list = pd.unique(self.ICU_patient_data['PatientID'])
         
         icu_rd_list = []
 
         for i in range(len(pa_list)):
-            sub_data = self.ICU_patient_data[self.ICU_patient_data['subject_id'] == pa_list[i]]
-            if len(pd.unique(sub_data['stay_id'])) > 1:
+            sub_data = self.ICU_patient_data[self.ICU_patient_data['PatientID'] == pa_list[i]]
+            if len(pd.unique(sub_data['CaseID'])) > 1:
                 icu_rd_list.append(pa_list[i])
 
-        ICU_patient_data_rd = self.ICU_patient_data[self.ICU_patient_data['subject_id'].isin(icu_rd_list)].copy()
+        ICU_patient_data_rd = self.ICU_patient_data[self.ICU_patient_data['PatientID'].isin(icu_rd_list)].copy()
         pa_list_d = []
         icu_rd_list = []
         disc_fail_list = []
 
         for i in tqdm(range(len(icu_rd_list))):
-            sub_data = ICU_patient_data_rd[ICU_patient_data_rd['subject_id'] == icu_rd_list[i]]
+            sub_data = ICU_patient_data_rd[ICU_patient_data_rd['PatientID'] == icu_rd_list[i]]
             for j in range(1, len(sub_data)):
-                if sub_data['stay_id'].iloc[j] != sub_data['stay_id'].iloc[j-1]:
+                if sub_data['CaseID'].iloc[j] != sub_data['CaseID'].iloc[j-1]:
                     if sub_data['intime'].iloc[j] - sub_data['outtime'].iloc[j-1] <= pd.Timedelta(f'{readmission_observation_days} days 00:00:00'):
                         pa_list_d.append(icu_rd_list[i])
-                        disc_fail_list.append(sub_data['stay_id'].iloc[j - 1])
-                        icu_rd_list.append(sub_data['stay_id'].iloc[j])
+                        disc_fail_list.append(sub_data['CaseID'].iloc[j - 1])
+                        icu_rd_list.append(sub_data['CaseID'].iloc[j])
         
                 else:
-                    print("Error: ", sub_data['stay_id'].iloc[j])
+                    print("Error: ", sub_data['CaseID'].iloc[j])
 
         self.ICU_patient_data[f'discharge_fail_{readmission_observation_days}_day'] = 0
         self.ICU_patient_data[f'readmission_{readmission_observation_days}_day'] = 0
 
-        for stay_id in disc_fail_list:
-            self.ICU_patient_data.loc[self.ICU_patient_data['stay_id'] == stay_id, f'discharge_fail_{readmission_observation_days}_day'] = 1
+        for case_id in disc_fail_list:
+            self.ICU_patient_data.loc[self.ICU_patient_data['CaseID'] == case_id, f'discharge_fail_{readmission_observation_days}_day'] = 1
 
-        for stay_id in icu_rd_list:
-            self.ICU_patient_data.loc[self.ICU_patient_data['stay_id'] == stay_id, f'readmission_{readmission_observation_days}_day'] = 1
+        for case_id in icu_rd_list:
+            self.ICU_patient_data.loc[self.ICU_patient_data['CaseID'] == case_id, f'readmission_{readmission_observation_days}_day'] = 1
         
         self.ICU_patient_data = self.ICU_patient_data.reset_index(drop = True)
 
     def denote_death_cases(self, admission_data, patients_data, death_observation_days = 30):
 
-        patients_data_select = patients_data.drop(columns = ['anchor_year', 'anchor_year_group'])
-        admission_data_select = admission_data[['subject_id', 'hadm_id', 'admittime', 'dischtime', 'deathtime', 'admission_type', 'race']]
+        # SICdb may not have anchor_year fields, so we handle them conditionally
+        columns_to_drop = []
+        if 'anchor_year' in patients_data.columns:
+            columns_to_drop.append('anchor_year')
+        if 'anchor_year_group' in patients_data.columns:
+            columns_to_drop.append('anchor_year_group')
+        
+        if columns_to_drop:
+            patients_data_select = patients_data.drop(columns = columns_to_drop)
+        else:
+            patients_data_select = patients_data.copy()
 
-        patients_data_select = patients_data_select[patients_data_select['subject_id'].isin(self.ICU_patient_data['subject_id'])]
-        admission_data_select = admission_data_select[admission_data_select['subject_id'].isin(self.ICU_patient_data['subject_id'])]
+        # SICdb may not have hadm_id, so we adapt the selection accordingly
+        available_columns = ['PatientID']
+        for col in ['admittime', 'dischtime', 'deathtime', 'admission_type', 'race']:
+            if col in admission_data.columns:
+                available_columns.append(col)
+        
+        admission_data_select = admission_data[available_columns]
 
-        admission_data_select_v1 = admission_data_select[['subject_id', 'race']].copy()
-        admission_data_select_v1 = admission_data_select_v1.drop_duplicates(subset = ['subject_id'], keep = 'first')
+        patients_data_select = patients_data_select[patients_data_select['PatientID'].isin(self.ICU_patient_data['PatientID'])]
+        admission_data_select = admission_data_select[admission_data_select['PatientID'].isin(self.ICU_patient_data['PatientID'])]
 
-        self.ICU_patient_data = pd.merge(self.ICU_patient_data, admission_data_select_v1, how = 'left', on = 'subject_id')
-        self.ICU_patient_data = pd.merge(self.ICU_patient_data, patients_data_select, how = 'left', on = 'subject_id')
+        # Only merge race if it exists
+        if 'race' in admission_data_select.columns:
+            admission_data_select_v1 = admission_data_select[['PatientID', 'race']].copy()
+            admission_data_select_v1 = admission_data_select_v1.drop_duplicates(subset = ['PatientID'], keep = 'first')
+            self.ICU_patient_data = pd.merge(self.ICU_patient_data, admission_data_select_v1, how = 'left', on = 'PatientID')
+
+        self.ICU_patient_data = pd.merge(self.ICU_patient_data, patients_data_select, how = 'left', on = 'PatientID')
         
         self.ICU_patient_data = self.ICU_patient_data.reset_index(drop = True)
 
@@ -382,12 +447,12 @@ class PatientDataProcess:
 
     def denote_readmission_count(self, readmission_observation_days = 30):
         self.ICU_patient_data = self.ICU_patient_data.reset_index(drop = True)
-        patient_list = pd.unique(self.ICU_patient_data['subject_id'])
+        patient_list = pd.unique(self.ICU_patient_data['PatientID'])
 
         self.ICU_patient_data[f'readmission_count_{readmission_observation_days}_day'] = 0
 
         for patient_id in patient_list:
-            sub_data = self.ICU_patient_data.loc[self.ICU_patient_data['subject_id'] == patient_id]
+            sub_data = self.ICU_patient_data.loc[self.ICU_patient_data['PatientID'] == patient_id]
 
             counts = 0
 
@@ -411,48 +476,49 @@ class GenerateDataSet:
         self.icu_patient_data = icu_patient_data
 
     def prepare_chart_events_data(self, items_delete_list):
-        self.chart_events_data = self.chart_events_data[self.chart_events_data['stay_id'].isin(self.icu_patient_data['stay_id'])]
+        self.chart_events_data = self.chart_events_data[self.chart_events_data['CaseID'].isin(self.icu_patient_data['CaseID'])]
         self.chart_events_data = self.chart_events_data.reset_index(drop = True)
-        self.chart_events_data[['subject_id', 'hadm_id', 'stay_id', 'itemid']] = self.chart_events_data[['subject_id', 'hadm_id', 'stay_id', 'itemid']].astype('int64')
+        self.chart_events_data[['PatientID', 'CaseID', 'itemid']] = self.chart_events_data[['PatientID', 'CaseID', 'itemid']].astype('int64')
         
         self.d_items_data_chart = self.d_items_data_chart[~self.d_items_data_chart['label'].isin(items_delete_list)]
 
         self.chart_events_data = self.chart_events_data[self.chart_events_data['itemid'].isin(self.d_items_data_chart['itemid'])]
-        self.chart_events_data = self.chart_events_data[self.chart_events_data['stay_id'].isin(self.icu_patient_data['stay_id'])]
+        self.chart_events_data = self.chart_events_data[self.chart_events_data['CaseID'].isin(self.icu_patient_data['CaseID'])]
         self.chart_events_data = self.chart_events_data.reset_index(drop = True)
 
-        drop_patient_list = pd.unique(self.icu_patient_data[~self.icu_patient_data['stay_id'].isin(self.chart_events_data['stay_id'])]['subject_id'])
-        self.icu_patient_data = self.icu_patient_data[~self.icu_patient_data['subject_id'].isin(drop_patient_list)]
+        drop_patient_list = pd.unique(self.icu_patient_data[~self.icu_patient_data['CaseID'].isin(self.chart_events_data['CaseID'])]['PatientID'])
+        self.icu_patient_data = self.icu_patient_data[~self.icu_patient_data['PatientID'].isin(drop_patient_list)]
         self.icu_patient_data = self.icu_patient_data.reset_index(drop = True)
 
-        drop_patient_list = pd.unique(self.icu_patient_data[self.icu_patient_data['los'].isnull()]['subject_id'])
-        self.icu_patient_data = self.icu_patient_data[~self.icu_patient_data['subject_id'].isin(drop_patient_list)]
+        drop_patient_list = pd.unique(self.icu_patient_data[self.icu_patient_data['los'].isnull()]['PatientID'])
+        self.icu_patient_data = self.icu_patient_data[~self.icu_patient_data['PatientID'].isin(drop_patient_list)]
         self.icu_patient_data = self.icu_patient_data.reset_index(drop = True)
 
-        self.chart_events_data = self.chart_events_data[self.chart_events_data['stay_id'].isin(self.icu_patient_data['stay_id'])]
+        self.chart_events_data = self.chart_events_data[self.chart_events_data['CaseID'].isin(self.icu_patient_data['CaseID'])]
         self.chart_events_data = self.chart_events_data.reset_index(drop = True)
 
         self.chart_events_data['charttime'] = pd.to_datetime(self.chart_events_data['charttime'])
-        self.chart_events_data['storetime'] = pd.to_datetime(self.chart_events_data['storetime'])
+        # SICdb may not have storetime field, handle conditionally
+        if 'storetime' in self.chart_events_data.columns:
+            self.chart_events_data['storetime'] = pd.to_datetime(self.chart_events_data['storetime'])
     
     def data_selection(self, data, i_1, i_2, i_3):
         sub_data = data.loc[(data['charttime'] >= i_1) & (data['charttime'] <= i_2) & (data["itemid"] == i_3)]
         return sub_data
 
     def dataset_generation(self, physio_table):
-        icu_stay_list = pd.unique(self.icu_patient_data['stay_id'])
+        icu_stay_list = pd.unique(self.icu_patient_data['CaseID'])
         for i in range(len(icu_stay_list)):
             
             print("The number of processed ICU stay admissions: ", i)
             
             index = self.icu_patient_data["intime"].iloc[i]
             
-            s_table_id = self.chart_events_data[self.chart_events_data['stay_id'] == icu_stay_list[i]]
+            s_table_id = self.chart_events_data[self.chart_events_data['CaseID'] == icu_stay_list[i]]
 
             while index <= self.icu_patient_data["outtime"].iloc[i]:
-                physio_table['subject_id'].append(self.icu_patient_data['subject_id'].iloc[i])
-                physio_table['hadm_id'].append(self.icu_patient_data['hadm_id'].iloc[i])
-                physio_table['stay_id'].append(self.icu_patient_data['stay_id'].iloc[i])
+                physio_table['PatientID'].append(self.icu_patient_data['PatientID'].iloc[i])
+                physio_table['CaseID'].append(self.icu_patient_data['CaseID'].iloc[i])
                 physio_table['icu_starttime'].append(self.icu_patient_data['intime'].iloc[i])
                 physio_table['icu_endtime'].append(self.icu_patient_data['outtime'].iloc[i]) 
                 physio_table['los'].append(self.icu_patient_data['los'].iloc[i])        
@@ -461,7 +527,7 @@ class GenerateDataSet:
                 physio_table['readmission_count'].append(self.icu_patient_data['readmission_count_30_day'].iloc[i])
                 physio_table['death_in_ICU'].append(self.icu_patient_data['death_in_ICU'].iloc[i])
                 physio_table['death_out_ICU'].append(self.icu_patient_data['death_out_ICU_30_day'].iloc[i])
-                physio_table['age'].append(self.icu_patient_data['anchor_age'].iloc[i])
+                physio_table['age'].append(self.icu_patient_data['age'].iloc[i])
                 physio_table['gender'].append(self.icu_patient_data['gender'].iloc[i])
                 physio_table['race'].append(self.icu_patient_data['race'].iloc[i])
                 
@@ -604,13 +670,13 @@ class GenerateDataSet:
 
         self.generated_dataset = self.generated_dataset.drop(columns = ['race'])
 
-        icu_stayid_list = self.generated_dataset['stay_id'].unique()
+        icu_stayid_list = self.generated_dataset['CaseID'].unique()
 
         self.generated_dataset['discharge_action'] = 0
 
         for i in range(len(icu_stayid_list)):
-            time_idx = self.generated_dataset[(self.generated_dataset['stay_id'] == icu_stayid_list[i])]['time'].iloc[-1]
-            self.generated_dataset.loc[(self.generated_dataset['stay_id'] == icu_stayid_list[i]) & (self.generated_dataset['time'] == time_idx), 'discharge_action'] = 1
+            time_idx = self.generated_dataset[(self.generated_dataset['CaseID'] == icu_stayid_list[i])]['time'].iloc[-1]
+            self.generated_dataset.loc[(self.generated_dataset['CaseID'] == icu_stayid_list[i]) & (self.generated_dataset['time'] == time_idx), 'discharge_action'] = 1
 
         self.generated_dataset['Blood Pressure Systolic'] = self.generated_dataset.apply(self.assign_blood_pressure, axis = 1)
         self.generated_dataset['Blood Pressure Diastolic'] = self.generated_dataset.apply(self.assign_blood_pressure_diastolic, axis = 1)
@@ -624,10 +690,10 @@ class GenerateDataSet:
         self.generated_dataset['Weight'] = self.generated_dataset.apply(self.assign_weight, axis = 1)
 
         self.generated_dataset = self.generated_dataset.drop(columns = drop_columns)
-        pro_events_data_weight = pro_events_data[['stay_id', 'patientweight']]
-        pro_events_data_weight = pro_events_data_weight.drop_duplicates(subset = ['stay_id'], keep = 'first')
+        pro_events_data_weight = pro_events_data[['CaseID', 'patientweight']]
+        pro_events_data_weight = pro_events_data_weight.drop_duplicates(subset = ['CaseID'], keep = 'first')
 
-        self.generated_dataset = pd.merge(self.generated_dataset, pro_events_data_weight, on = 'stay_id', how = 'left')
+        self.generated_dataset = pd.merge(self.generated_dataset, pro_events_data_weight, on = 'CaseID', how = 'left')
         self.generated_dataset['weight'] = self.generated_dataset.apply(self.assign_weight_2, axis = 1)
         self.generated_dataset = self.generated_dataset.drop(columns = ['Weight', 'patientweight'])
 
@@ -701,10 +767,10 @@ class GenerateDataSet:
 
         # Apply domain-specific filtering (existing logic)
         if 'Inspired O2 Fraction' in physio_df_v2_abn.columns:
-            id_delete_list = list(physio_df_v2_abn[physio_df_v2_abn['Inspired O2 Fraction'] > 100]['subject_id'])
+            id_delete_list = list(physio_df_v2_abn[physio_df_v2_abn['Inspired O2 Fraction'] > 100]['PatientID'])
             if id_delete_list:
                 print(f"Removing {len(id_delete_list)} subjects with Inspired O2 Fraction > 100%")
-                physio_df_v2_abn = physio_df_v2_abn[~physio_df_v2_abn['subject_id'].isin(id_delete_list)]
+                physio_df_v2_abn = physio_df_v2_abn[~physio_df_v2_abn['PatientID'].isin(id_delete_list)]
         
         self.generated_dataset = physio_df_v2_abn.copy()
         print(f"Abnormal data filtering completed using {method.upper()} method")
@@ -736,11 +802,11 @@ class PatientDataImputation:
 
     def forward_fill_missing_values(self, var_list = []):
         for i in range(len(var_list)):
-            self.generated_dataset[var_list[i]] = self.generated_dataset.groupby(by = ['stay_id', 'readmission_count'])[var_list[i]].ffill()
+            self.generated_dataset[var_list[i]] = self.generated_dataset.groupby(by = ['CaseID', 'readmission_count'])[var_list[i]].ffill()
 
     def linear_impute_missing_values(self, var_list = []):
         for i in range(len(var_list)):
-            self.generated_dataset[var_list[i]] = self.generated_dataset.groupby(by = ['stay_id', 'readmission_count'])[var_list[i]].apply(lambda x: x.interpolate(method = 'linear'))
+            self.generated_dataset[var_list[i]] = self.generated_dataset.groupby(by = ['CaseID', 'readmission_count'])[var_list[i]].apply(lambda x: x.interpolate(method = 'linear'))
 
     def process_chunk(self, chunk, imputer):
         chunk_imputed = imputer.fit_transform(chunk)  
@@ -804,7 +870,7 @@ class StateSpaceBuilder:
     def drop_duplicate_rows(self):
         self.generated_dataset = self.generated_dataset.drop_duplicates()
         m = self.generated_dataset[self.generated_dataset['discharge_action'] == 1]
-        duplicates = m[m.duplicated(subset=['stay_id'])]
+        duplicates = m[m.duplicated(subset=['CaseID'])]
         if len(duplicates) > 0:
             print(f"Attention!!! Found {len(duplicates)} duplicate rows in the dataset! Please check the dataset manually.")
             self.generated_dataset = self.generated_dataset.drop(duplicates.index)
@@ -840,14 +906,14 @@ class StateSpaceBuilder:
                                                                         'Tidal Volume (spontaneous)', 'Tidal Volume (set)', 'Tidal Volume (observed)']).copy()
         
     def icu_discharge_data_selection(self, los_threshold = 15.0):
-        self.generated_dataset = self.generated_dataset[~self.generated_dataset['subject_id'].isin(pd.unique(self.generated_dataset[self.generated_dataset['los'] > los_threshold]['subject_id']))].copy()
+        self.generated_dataset = self.generated_dataset[~self.generated_dataset['PatientID'].isin(pd.unique(self.generated_dataset[self.generated_dataset['los'] > los_threshold]['PatientID']))].copy()
         self.generated_dataset = self.generated_dataset.reset_index(drop = True)
 
-        drop_patient_list = self.generated_dataset.loc[self.generated_dataset['readmission_count'] >= 6, 'subject_id'].tolist()
-        self.generated_dataset = self.generated_dataset[~self.generated_dataset['subject_id'].isin(drop_patient_list)].copy()
+        drop_patient_list = self.generated_dataset.loc[self.generated_dataset['readmission_count'] >= 6, 'PatientID'].tolist()
+        self.generated_dataset = self.generated_dataset[~self.generated_dataset['PatientID'].isin(drop_patient_list)].copy()
         self.generated_dataset = self.generated_dataset.reset_index(drop = True)
 
-        self.generated_dataset['epoch'] = self.generated_dataset.groupby(['stay_id', 'readmission_count']).cumcount() + 1
+        self.generated_dataset['epoch'] = self.generated_dataset.groupby(['CaseID', 'readmission_count']).cumcount() + 1
 
         self.generated_dataset['id_delete'] = 0.0
         condition_1 = (self.generated_dataset['readmission_count'] == 0) & (self.generated_dataset['death_in_ICU'] == 1)
@@ -940,24 +1006,24 @@ class StateSpaceBuilder:
         condition = (self.rl_cont_state_table_scaled['readmission_count'] == 0.6000000000000001)
         self.rl_cont_state_table_scaled.loc[condition, 'readmission_count'] = 0.6
 
-        train_subject_id, temp_subject_id = train_test_split(pd.unique(self.state_id_table['subject_id']), test_size = test_prop,  random_state = random_seed)
+        train_subject_id, temp_subject_id = train_test_split(pd.unique(self.state_id_table['PatientID']), test_size = test_prop,  random_state = random_seed)
         val_subject_id, test_subject_id = train_test_split(temp_subject_id, test_size = val_prop, random_state = random_seed)
 
-        self.id_table_train = self.state_id_table[self.state_id_table['subject_id'].isin(train_subject_id.tolist())].copy()
+        self.id_table_train = self.state_id_table[self.state_id_table['PatientID'].isin(train_subject_id.tolist())].copy()
         mv_train_index = self.id_table_train.index
         id_index_list = mv_train_index.tolist()
 
         self.rl_table_train = self.rl_cont_state_table.loc[id_index_list].copy()
         self.rl_table_train_scaled = self.rl_cont_state_table_scaled.loc[id_index_list].copy()
 
-        self.id_table_val = self.state_id_table[self.state_id_table['subject_id'].isin(val_subject_id.tolist())].copy()
+        self.id_table_val = self.state_id_table[self.state_id_table['PatientID'].isin(val_subject_id.tolist())].copy()
         mv_val_index = self.id_table_val.index
         id_index_list = mv_val_index.tolist()
 
         self.rl_table_val = self.rl_cont_state_table.loc[id_index_list].copy()
         self.rl_table_val_scaled = self.rl_cont_state_table_scaled.loc[id_index_list].copy()
 
-        self.id_table_test = self.state_id_table[self.state_id_table['subject_id'].isin(test_subject_id.tolist())].copy()
+        self.id_table_test = self.state_id_table[self.state_id_table['PatientID'].isin(test_subject_id.tolist())].copy()
         mv_test_index = self.id_table_test.index
         id_index_list = mv_test_index.tolist()
 

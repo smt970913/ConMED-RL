@@ -7,7 +7,7 @@ echo Trying python...
 python --version >nul 2>&1
 if %errorlevel% == 0 (
     echo Found python, starting application...
-    python web_application_test.py
+    python web_application_demo.py
     goto :end
 )
 
@@ -15,7 +15,7 @@ echo Trying py...
 py --version >nul 2>&1
 if %errorlevel% == 0 (
     echo Found py, starting application...
-    py web_application_test.py
+    py web_application_demo.py
     goto :end
 )
 
@@ -23,7 +23,7 @@ echo Trying python3...
 python3 --version >nul 2>&1
 if %errorlevel% == 0 (
     echo Found python3, starting application...
-    python3 web_application_test.py
+    python3 web_application_demo.py
     goto :end
 )
 

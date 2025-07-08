@@ -177,20 +177,39 @@ class FQE:
         return loss.item()
 
     def avg_Q_value_est(self, state_batch):
-        policy_action_batch = self.eval_agent.rl_policy(state_batch)
-        q_values = self.policy_net(state_batch).gather(dim=1, index=policy_action_batch).squeeze(1)
+        # policy_action_batch = self.eval_agent.rl_policy(state_batch)
+        # q_values = self.policy_net(state_batch).gather(dim = 1, index = policy_action_batch).squeeze(1)
 
-        q_mean = q_values.mean()
-        q_std = q_values.std()
-        n = q_values.shape[0]
+        # q_mean = q_values.mean()
+        # q_std = q_values.std()
+        # n = q_values.shape[0]
     
-        if n <= 1 or q_std == 0:
-            return q_mean.item(), q_mean.item()
+        # if n <= 1 or q_std == 0:
+        #     return q_mean.item(), q_mean.item()
     
-        z = 2.33  
-        q_upper_bound = q_mean + z * (q_std / math.sqrt(n))
+        # z = 2.33  
+        # q_upper_bound = q_mean + z * (q_std / math.sqrt(n))
     
-        return q_mean.item(), q_upper_bound.item()
+        # return q_mean.item(), q_upper_bound.item()
+        q_values = self.policy_net(state_batch)  
+    
+        
+        q_mean_per_action = q_values.mean(dim = 0)  
+        # q_std_per_action = q_values.std(dim = 0)    
+        # n = q_values.shape[0]  # batch_size
+        
+        # if n <= 1:
+        #     return q_mean_per_action, q_mean_per_action
+        
+        # z = 2.33
+        
+        # q_upper_bound_per_action = q_mean_per_action + z * (q_std_per_action / math.sqrt(n))
+        
+        
+        # zero_std_mask = (q_std_per_action == 0)
+        # q_upper_bound_per_action[zero_std_mask] = q_mean_per_action[zero_std_mask]
+        
+        return q_mean_per_action[1].item()
 
     def save(self, path):
         torch.save(self.policy_net.state_dict(), path + 'FQE_policy_network.pth')

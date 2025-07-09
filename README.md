@@ -4,7 +4,7 @@
     <img src="image/ConMED-RL Logo.png" width="400">
 </div>
 
-This repository provides the implementation of an **Offline Constrained Reinforcement Learning (OCRL)** - based decision support toolkit for critical care decision-making. The toolkit is developed based on our research on **ICU extubation** and **discharge** decision-making. It builds on our studies in modeling and optimizing clinical decisions under uncertainty in the ICU setting.
+This repository provides the implementation of an **Offline Constrained Reinforcement Learning (OCRL)** - based decision support toolkit for medical decision-making. The toolkit is developed based on our research on **ICU extubation** and **discharge** decision-making. It builds on our studies in modeling and optimizing clinical decisions under uncertainty in the ICU setting.
 In addition to the codebase, we provide two curated datasets designed to facilitate further research on extubation and discharge decision-making tasks.
 This repository is created by **Maotong Sun** (maotong.sun@tum.de) and **Jingui Xie** (jingui.xie@tum.de).
 
@@ -92,15 +92,15 @@ ConMED-RL supports multiple installation methods to accommodate different use ca
 2. **Create a virtual environment:**
    ```bash
    # Using conda (recommended)
-   conda create -n ConMEDrl python=3.10.14
-   conda activate ConMEDrl
+   conda create -n ConMedRL python=3.10.14
+   conda activate ConMedRL
    
    # OR using venv
-   python -m venv ConMEDrl_env
+   python -m venv ConMedRL_env
    # On Windows:
-   ConMEDrl_env\Scripts\activate
+   ConMedRL_env\Scripts\activate
    # On Linux/Mac:
-   source ConMEDrl_env/bin/activate
+   source ConMedRL_env/bin/activate
    ```
 
 3. **Install dependencies:**
@@ -115,7 +115,7 @@ ConMED-RL supports multiple installation methods to accommodate different use ca
 
 5. **Verify installation:**
    ```bash
-   python -c "import ConMEDRL.ConMEDrl; print('ConMED-RL installed successfully!')"
+   python -c "import ConMEDRL.ConMedRL; print('ConMED-RL installed successfully!')"
    ```
 
 ### Method 2: Docker Installation (Recommended for Production)
@@ -164,14 +164,14 @@ For the core ConMED-RL framework without the web application:
 
 ```bash
 # Install from PyPI (when published)
-pip install ConMEDrl
+pip install ConMEDRL
 
 # Or install directly from GitHub
 pip install git+https://github.com/your-username/ICU-Decision-Making-OCRL.git
 
 # Install with optional dependencies
-pip install ConMEDrl[models,viz]  # For visualization and model utilities
-pip install ConMEDrl[dev]         # For development tools
+pip install ConMEDRL[models,viz]  # For visualization and model utilities
+pip install ConMEDRL[dev]         # For development tools
 ```
 
 ### Quick Start for Different Use Cases
@@ -195,18 +195,18 @@ pip install ConMEDrl[dev]         # For development tools
 1. Follow **Method 1** (Local Installation)
 2. Import ConMED-RL components:
    ```python
-   from ConMEDRL.ConMEDrl import FQE, FQI, RLTraining
-   from ConMEDRL.data_loader import TrainDataLoader, ValTestDataLoader
+   from ConMEDRL.ConMedRL import conmedrl, conmedrl_continuous
+   from ConMEDRL.ConMedRL import data_loader
    ```
 
 ### Dependencies Overview
 
 The toolkit requires the following main dependencies:
-- **PyTorch**: Deep learning framework for OCRL algorithms
+- **PyTorch**: Building framework for OCRL algorithms
 - **Flask**: Web framework for the clinical decision support interface
-- **scikit-learn**: Machine learning utilities
+- **scikit-learn**: Dataset split
 - **pandas/numpy**: Data manipulation and numerical computing
-- **tqdm**: Progress bars for training processes
+- **Dask**: Large data manipulation
 
 ### Troubleshooting
 
@@ -234,7 +234,7 @@ The toolkit requires the following main dependencies:
 **Getting Help:**
 - Check the `CDM-Software/DEPLOYMENT_GUIDE.md` for detailed deployment instructions
 - Review example notebooks in `Experiment Notebook/` directory
-- Contact the maintainers: maotong.sun@tum.de or jingui.xie@tum.de
+- Contact the maintainers: maotong.sun@tum.de
 
 ## Implementation Guideline
 <div style="text-align: center;">
@@ -242,7 +242,6 @@ The toolkit requires the following main dependencies:
 </div>
 
 ### Dataset Module
-
 The datasets are organized in the `Data/` folder with separate subdirectories for different clinical scenarios (discharge decision-making and extubation decision-making) and data sources (MIMIC-IV and SICdb).
 
 #### Data Preprocessing Scripts
@@ -396,7 +395,7 @@ The `CDM-Software/` directory contains the clinical decision support software im
 
 #### Interactive Decision Support System (`interactive_support.py`)
 
-The core software module that implements the necessary Fitted Q Evaluation (FQE) model inside our OCRL framework optimized for real-time clinical decision support.
+The core software module that implements the necessary Fitted-Q-Evaluation (FQE) model inside our OCRL framework optimized for real-time clinical decision support.
 
 #### Web Application (`web_application_test.py`)
 

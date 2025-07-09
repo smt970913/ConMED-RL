@@ -530,7 +530,7 @@ WELCOME_HTML_TEMPLATE = """
 <div class="container">
     <div class="welcome-card">
         <div class="logo-container">
-            <img src="data:image/jpeg;base64,{{ img_data }}" alt="ConCare-RL Logo" class="img-fluid">
+            <img src="data:image/jpeg;base64,{{ img_data }}" alt="ConMED-RL Logo" class="img-fluid">
         </div>
         
         <h1 class="system-title">ICU Decision Support System</h1>
@@ -590,7 +590,7 @@ WELCOME_HTML_TEMPLATE = """
         
         <div class="mt-4">
             <small class="text-muted">
-                ConCare-RL © 2024 | ICU Decision Making Support System
+                ConMED-RL © 2025 | ICU Decision Making Support System
             </small>
         </div>
     </div>
@@ -1215,7 +1215,7 @@ RESULTS_HTML_TEMPLATE = """
         
         <div class="mt-4 text-center">
             <small class="text-muted">
-                ConCare-RL © 2024 | FQE-Based ICU Decision Support System
+                ConMED-RL © 2025 | FQE-Based ICU Decision Support System
             </small>
         </div>
     </div>
@@ -1358,7 +1358,7 @@ function selectThreshold(thresholdSet) {
 def index():
     """Welcome page where doctors choose whether to use the decision support tool"""
     # Load image and convert to base64 for HTML rendering
-    img = Image.open(os.path.join(PROJECT_ROOT, 'image', 'ConCare-RL Logo.png'))
+    img = Image.open(os.path.join(PROJECT_ROOT, 'image', 'ConMED-RL Logo.png'))
     
     # Convert RGBA to RGB if necessary (PNG with transparency)
     if img.mode in ('RGBA', 'LA', 'P'):
@@ -1410,7 +1410,7 @@ def model_selection(decision_type, threshold_set):
             flash("Invalid model selection", "error")
 
     # Load image and convert to base64 for HTML rendering
-    img = Image.open(os.path.join(PROJECT_ROOT, 'image', 'ConCare-RL Logo.png'))
+    img = Image.open(os.path.join(PROJECT_ROOT, 'image', 'ConMED-RL Logo.png'))
     
     # Convert RGBA to RGB if necessary (PNG with transparency)
     if img.mode in ('RGBA', 'LA', 'P'):

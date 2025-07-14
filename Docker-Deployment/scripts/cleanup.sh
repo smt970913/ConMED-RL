@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ConCare-RL Docker Cleanup Script
+# ConMED-RL Docker Cleanup Script
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -9,7 +9,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}ConCare-RL Docker Cleanup Script${NC}"
+echo -e "${BLUE}ConMED-RL Docker Cleanup Script${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 
@@ -37,10 +37,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/.." || exit 1
 
 echo "What would you like to clean up?"
-echo "[1] Stop all ConCare-RL containers"
-echo "[2] Remove ConCare-RL containers (keeps images)"
-echo "[3] Remove ConCare-RL images (keeps volumes)"
-echo "[4] Remove all ConCare-RL data (containers, images, volumes)"
+echo "[1] Stop all ConMED-RL containers"
+echo "[2] Remove ConMED-RL containers (keeps images)"
+echo "[3] Remove ConMED-RL images (keeps volumes)"
+echo "[4] Remove all ConMED-RL data (containers, images, volumes)"
 echo "[5] Clean Docker system (removes all unused data)"
 echo "[6] Full reset (stop everything and clean all Docker data)"
 echo ""
@@ -48,80 +48,80 @@ read -p "Enter your choice (1-6): " choice
 
 case $choice in
     1)
-        print_status "Stopping all ConCare-RL containers..."
+        print_status "Stopping all ConMED-RL containers..."
         docker-compose down 2>/dev/null || true
         docker-compose -f docker-compose.prod.yml down 2>/dev/null || true
         docker-compose -f docker-compose.prod.yml --profile monitoring down 2>/dev/null || true
-        print_status "All ConCare-RL containers stopped."
+        print_status "All ConMED-RL containers stopped."
         ;;
     2)
-        print_status "Removing ConCare-RL containers..."
+        print_status "Removing ConMED-RL containers..."
         docker-compose down --remove-orphans 2>/dev/null || true
         docker-compose -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
         docker-compose -f docker-compose.prod.yml --profile monitoring down --remove-orphans 2>/dev/null || true
         
-        # Remove any remaining ConCare-RL containers
+        # Remove any remaining ConMED-RL containers
         CONTAINERS=$(docker ps -a --filter "name=conmedrl" --format "{{.ID}}")
         if [ ! -z "$CONTAINERS" ]; then
             echo "$CONTAINERS" | xargs docker rm -f
-            print_status "Removed ConCare-RL containers."
+            print_status "Removed ConMED-RL containers."
         else
-            print_status "No ConCare-RL containers found."
+            print_status "No ConMED-RL containers found."
         fi
         ;;
     3)
-        print_status "Removing ConCare-RL images..."
+        print_status "Removing ConMED-RL images..."
         # Stop containers first
         docker-compose down 2>/dev/null || true
         docker-compose -f docker-compose.prod.yml --profile monitoring down 2>/dev/null || true
         
-        # Remove ConCare-RL images
+        # Remove ConMED-RL images
         IMAGES=$(docker images --filter "reference=*conmedrl*" --format "{{.ID}}")
         if [ ! -z "$IMAGES" ]; then
             echo "$IMAGES" | xargs docker rmi -f
-            print_status "Removed ConCare-RL images."
+            print_status "Removed ConMED-RL images."
         else
-            print_status "No ConCare-RL images found."
+            print_status "No ConMED-RL images found."
         fi
         
         # Remove related images
         docker rmi $(docker images --filter "dangling=true" -q) 2>/dev/null || true
         ;;
     4)
-        print_warning "This will remove ALL ConCare-RL containers, images, and volumes!"
+        print_warning "This will remove ALL ConMED-RL containers, images, and volumes!"
         read -p "Are you sure? (y/N): " confirm
         if [[ $confirm =~ ^[Yy]$ ]]; then
-            print_status "Performing full ConCare-RL cleanup..."
+            print_status "Performing full ConMED-RL cleanup..."
             
             # Stop and remove everything
             docker-compose down --volumes --remove-orphans 2>/dev/null || true
             docker-compose -f docker-compose.prod.yml --profile monitoring down --volumes --remove-orphans 2>/dev/null || true
             
-            # Remove ConCare-RL containers
+            # Remove ConMED-RL containers
             CONTAINERS=$(docker ps -a --filter "name=conmedrl" --format "{{.ID}}")
             if [ ! -z "$CONTAINERS" ]; then
                 echo "$CONTAINERS" | xargs docker rm -f
             fi
             
-            # Remove ConCare-RL images
+            # Remove ConMED-RL images
             IMAGES=$(docker images --filter "reference=*conmedrl*" --format "{{.ID}}")
             if [ ! -z "$IMAGES" ]; then
                 echo "$IMAGES" | xargs docker rmi -f
             fi
             
-            # Remove ConCare-RL volumes
+            # Remove ConMED-RL volumes
             VOLUMES=$(docker volume ls --filter "name=*conmedrl*" --format "{{.Name}}")
             if [ ! -z "$VOLUMES" ]; then
                 echo "$VOLUMES" | xargs docker volume rm
             fi
             
-            print_status "Full ConCare-RL cleanup completed."
+            print_status "Full ConMED-RL cleanup completed."
         else
             print_status "Cleanup cancelled."
         fi
         ;;
     5)
-        print_warning "This will clean up ALL unused Docker data (not just ConCare-RL)!"
+        print_warning "This will clean up ALL unused Docker data (not just ConMED-RL)!"
         read -p "Are you sure? (y/N): " confirm
         if [[ $confirm =~ ^[Yy]$ ]]; then
             print_status "Cleaning Docker system..."
@@ -133,7 +133,7 @@ case $choice in
         ;;
     6)
         print_error "WARNING: This will stop ALL Docker containers and remove ALL Docker data!"
-        print_error "This affects ALL Docker applications on your system, not just ConCare-RL!"
+        print_error "This affects ALL Docker applications on your system, not just ConMED-RL!"
         read -p "Are you absolutely sure? Type 'RESET' to confirm: " confirm
         if [[ $confirm == "RESET" ]]; then
             print_status "Performing full Docker reset..."

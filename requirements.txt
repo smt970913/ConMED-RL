@@ -8,4 +8,10 @@ pandas==1.5.3
 celery==5.3.6
 gunicorn==20.1.0
 pillow==9.4.0
-requests==2.31.0  # Required for Claude API calls via HTTP (no need for anthropic library) 
+requests==2.31.0  # Required for Claude API calls via HTTP (no need for anthropic library)
+jupyter==1.0.0
+jupyterlab==4.0.5
+notebook==7.0.2
+matplotlib==3.7.1
+seaborn==0.12.2
+plotly==5.17.0 

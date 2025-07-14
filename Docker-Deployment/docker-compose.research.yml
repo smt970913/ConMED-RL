@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  conmed-rl-research:
+    build:
+      context: ../
+      dockerfile: Docker-Deployment/Dockerfile
+    container_name: conmed-rl-research
+    ports:
+      - "8888:8888"  # Jupyter Lab
+      - "8889:8889"  # Jupyter Notebook (alternative)
+      - "5000:5000"  # Flask web application (optional)
+    volumes:
+      - ../:/app
+      - /app/Docker-Deployment
+      - jupyter_data:/app/.jupyter
+      - notebook_outputs:/app/outputs
+    environment:
+      - PYTHONPATH=/app
+      - JUPYTER_ENABLE_LAB=yes
+      - JUPYTER_TOKEN=conmed-rl-research
+      - JUPYTER_CONFIG_DIR=/app/.jupyter
+    restart: unless-stopped
+    command: >
+      bash -c "
+        # Configure Jupyter
+        jupyter lab --generate-config
+        
+        # Start Jupyter Lab
+        jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root 
+        --notebook-dir=/app --token=conmed-rl-research
+        --ServerApp.tornado_settings='{\"headers\":{\"Content-Security-Policy\":\"frame-ancestors self *\"}}'
+      "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/lab"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - conmed-rl-network
+
+  # Optional: Database for research data
+  conmed-rl-db:
+    image: postgres:13
+    container_name: conmed-rl-research-db
+    environment:
+      POSTGRES_DB: conmed_rl_research
+      POSTGRES_USER: researcher
+      POSTGRES_PASSWORD: research_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - conmed-rl-network
+
+networks:
+  conmed-rl-network:
+    driver: bridge
+
+volumes:
+  jupyter_data:
+    driver: local
+  notebook_outputs:
+    driver: local
+  postgres_data:
+    driver: local 

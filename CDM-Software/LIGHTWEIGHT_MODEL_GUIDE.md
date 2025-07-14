@@ -159,29 +159,49 @@ Lightweight model results differ from original model
 
 ### Docker Deployment
 
+**⚠️ Important**: For complete Docker deployment, please use the configurations in `../Docker-Deployment/` directory.
+
+#### Quick Docker Deployment
+```bash
+# Navigate to Docker deployment directory
+cd ../Docker-Deployment
+
+# For lightweight deployment, use research environment
+chmod +x scripts/build_research.sh
+./scripts/build_research.sh
+```
+
+#### Manual Lightweight Container (Advanced)
+If you need a minimal container with just the lightweight model:
+
 ```dockerfile
-FROM python:3.8-slim
+FROM python:3.10-slim
 
 WORKDIR /app
 COPY lightweight_model.py .
 COPY web_application_lightweight.py .
-COPY requirements_lightweight.txt .
 
-RUN pip install -r requirements_lightweight.txt
+# Install minimal dependencies
+RUN pip install torch==1.13.1 flask==2.2.2 --no-cache-dir
 
 EXPOSE 5001
 CMD ["python", "web_application_lightweight.py"]
 ```
 
-### Lightweight Dependencies File
+### Complete Docker Documentation
 
-Create `requirements_lightweight.txt`:
+For full Docker setup with all components:
+- **Main Docker Guide**: `../Docker-Deployment/README.md`
+- **Quick Start Guide**: `../Docker-Deployment/QUICK_START_GUIDE.md`
+- **Validation Guide**: `../Docker-Deployment/DOCKER_VALIDATION_GUIDE.md`
+
+### Lightweight Dependencies
+
+For standalone deployment, create `requirements_lightweight.txt`:
 ```
-torch>=1.8.0
-flask>=2.0.0
-numpy>=1.21.0
-scikit-learn>=1.0.0
-Pillow>=8.0.0
+torch>=1.13.1
+flask>=2.2.2
+numpy>=1.23.5
 ```
 
 ## 📈 Performance Comparison

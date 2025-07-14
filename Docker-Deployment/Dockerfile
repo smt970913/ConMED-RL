@@ -1,4 +1,4 @@
-# ConCare-RL Docker Image
+# ConMED-RL Docker Image
 # Multi-stage build for optimized production image
 
 # Build stage
@@ -47,7 +47,7 @@ ENV PYTHONPATH=/app \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH=/root/.local/bin:$PATH \
-    FLASK_APP=CDM-Software/web_application_test.py \
+    FLASK_APP=CDM-Software/web_application_demo.py \
     FLASK_ENV=production \
     WORKERS=2 \
     PORT=5000 \
@@ -59,6 +59,7 @@ COPY --chown=appuser:appuser ../CDM-Software ./CDM-Software/
 COPY --chown=appuser:appuser ../Software_FQE_models ./Software_FQE_models/
 COPY --chown=appuser:appuser ../image ./image/
 COPY --chown=appuser:appuser ../Data ./Data/
+COPY --chown=appuser:appuser ../Experiment\ Notebook ./Experiment\ Notebook/
 
 # Create necessary directories
 RUN mkdir -p /app/logs /app/temp && \
@@ -78,4 +79,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:${PORT}/health || exit 1
 
 # Default command
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT} --workers ${WORKERS} --timeout 300 --log-level ${LOG_LEVEL} --access-logfile - --error-logfile - web_application_test:create_app"] 
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT} --workers ${WORKERS} --timeout 300 --log-level ${LOG_LEVEL} --access-logfile - --error-logfile - web_application_demo:create_app"] 

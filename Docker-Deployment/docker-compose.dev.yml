@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  conmed-rl-app:
+    build:
+      context: ../
+      dockerfile: Docker-Deployment/Dockerfile
+    container_name: conmed-rl-dev
+    ports:
+      - "5000:5000"  # Flask web application
+      - "8888:8888"  # Jupyter Notebook
+    volumes:
+      - ../:/app
+      - /app/Docker-Deployment
+      - jupyter_data:/app/.jupyter
+    environment:
+      - FLASK_APP=CDM-Software/web_application_demo.py
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - PYTHONPATH=/app
+      - JUPYTER_ENABLE_LAB=yes
+      - JUPYTER_TOKEN=conmed-rl-dev
+    restart: unless-stopped
+    command: >
+      bash -c "
+        # Start Jupyter Lab in background
+        jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root 
+        --notebook-dir=/app --token=conmed-rl-dev &
+        
+        # Start Flask application
+        python CDM-Software/web_application_demo.py
+      "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - conmed-rl-network
+
+  # Optional: Add database service for development
+  conmed-rl-db:
+    image: postgres:13
+    container_name: conmed-rl-db
+    environment:
+      POSTGRES_DB: conmed_rl
+      POSTGRES_USER: conmed_rl
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - conmed-rl-network
+
+networks:
+  conmed-rl-network:
+    driver: bridge
+
+volumes:
+  jupyter_data:
+    driver: local
+  postgres_data:
+    driver: local 

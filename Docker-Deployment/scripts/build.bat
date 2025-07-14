@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 echo ========================================
-echo ConCare-RL Docker Build Script
+echo ConMED-RL Docker Build Script
 echo ========================================
 echo.
 
@@ -36,7 +36,7 @@ docker-compose down 2>nul
 docker system prune -f
 
 echo.
-echo Step 2: Building ConCare-RL Docker image...
+echo Step 2: Building ConMED-RL Docker image...
 docker-compose build --no-cache
 
 if %errorlevel% neq 0 (

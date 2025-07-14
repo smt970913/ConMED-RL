@@ -14,10 +14,12 @@ This repository is created by **Maotong Sun** (maotong.sun@tum.de) and **Jingui 
 ICU-Decision Making-OCRL/
 │
 ├── CDM-Software/                            # Clinical Decision Making Software
+│   ├── web_application_demo.py              # Main web application (Flask)
 │   ├── web_application_test.py              # Web application testing
 │   ├── interactive_support.py               # Interactive decision support system
 │   ├── test_environment.py                  # Environment testing utilities
 │   ├── run_app.bat                          # Application runner (Windows)
+│   ├── run_app.sh                           # Application runner (Linux/Mac)
 │   └── DEPLOYMENT_GUIDE.md                  # Deployment documentation
 │
 ├── ConMedRL/                                # Core OCRL framework
@@ -226,9 +228,9 @@ The toolkit requires the following main dependencies:
    - Use data batching for large datasets
 
 3. **Port conflicts (Docker):**
-   ```bash
-   # Change port mapping in docker-compose.yml or use:
-   docker-compose up -d --scale web=1 -p 8080:5000
+```bash
+# Change port mapping in docker-compose.yml or use:
+docker-compose up -d --scale conmed-rl-app=1 -p 8080:5000
    ```
 
 **Getting Help:**
@@ -433,12 +435,17 @@ A `Flask`-based web application that provides an intuitive interface for clinica
   - Path validation for deployment
   - Comprehensive system readiness assessment
 
-**Application Launcher (`run_app.bat`)**:
-- **Purpose**: Cross-platform application startup script for Windows
+**Application Launcher (`run_app.bat` / `run_app.sh`)**:
+- **Purpose**: Cross-platform application startup scripts
 - **Features**:
   - Multiple Python interpreter detection (python, py, python3)
-  - Automatic error handling and user guidance
-  - Installation instructions for missing dependencies
+  - Automatic dependency checking and validation
+  - Virtual environment activation support
+  - Error handling and user guidance
+  - Docker deployment recommendations
+- **Usage**:
+  - Windows: `run_app.bat`
+  - Linux/Mac: `chmod +x run_app.sh && ./run_app.sh`
 
 #### Deployment and Configuration
 

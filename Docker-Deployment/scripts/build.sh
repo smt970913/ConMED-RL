@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ConCare-RL Docker Build Script
+# ConMED-RL Docker Build Script
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -9,7 +9,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}ConCare-RL Docker Build Script${NC}"
+echo -e "${BLUE}ConMED-RL Docker Build Script${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 

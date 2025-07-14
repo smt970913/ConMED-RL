@@ -1,11 +1,11 @@
 version: '3.8'
 
 services:
-  conmedrl-app:
+  conmed-rl-app:
     build:
       context: ../
       dockerfile: Docker-Deployment/Dockerfile
-    container_name: conmedrl-dev
+    container_name: conmed-rl-dev
     ports:
       - "5000:5000"
     volumes:
@@ -23,23 +23,23 @@ services:
       timeout: 10s
       retries: 3
     networks:
-      - conmedrl-network
+      - conmed-rl-network
 
   # Optional: Add database service
-  # conmedrl-db:
+  # conmed-rl-db:
   #   image: postgres:13
-  #   container_name: conmedrl-db
+  #   container_name: conmed-rl-db
   #   environment:
-  #     POSTGRES_DB: conmedrl
-  #     POSTGRES_USER: conmedrl
+  #     POSTGRES_DB: conmed_rl
+  #     POSTGRES_USER: conmed_rl
   #     POSTGRES_PASSWORD: password
   #   volumes:
   #     - postgres_data:/var/lib/postgresql/data
   #   networks:
-  #     - conmedrl-network
+  #     - conmed-rl-network
 
 networks:
-  conmedrl-network:
+  conmed-rl-network:
     driver: bridge
 
 volumes:

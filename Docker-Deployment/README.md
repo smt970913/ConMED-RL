@@ -1,6 +1,6 @@
 # Docker Deployment Guide
 
-This directory contains all Docker-related files for deploying ConCare-RL in different environments.
+This directory contains all Docker-related files for deploying ConMED-RL in different environments.
 
 ## Directory Structure
 
@@ -8,15 +8,20 @@ This directory contains all Docker-related files for deploying ConCare-RL in dif
 Docker-Deployment/
 ├── README.md                    # This file
 ├── Dockerfile                   # Main Dockerfile for the application
-├── docker-compose.yml           # Docker Compose configuration
-├── docker-compose.prod.yml      # Production Docker Compose configuration
+├── docker-compose.yml           # Basic Docker Compose configuration
+├── docker-compose.dev.yml       # Development environment with Jupyter
+├── docker-compose.research.yml  # Research environment (Jupyter Lab focused)
+├── docker-compose.prod.yml      # Production environment with monitoring
 ├── .dockerignore               # Docker ignore file
 ├── nginx.conf                  # Nginx configuration for production
+├── DOCKER_VALIDATION_GUIDE.md  # Complete validation guide
 ├── scripts/
 │   ├── build.sh               # Build script (Linux/Mac)
 │   ├── build.bat              # Build script (Windows)
-│   ├── deploy.sh              # Deployment script (Linux/Mac)
-│   ├── deploy.bat             # Deployment script (Windows)
+│   ├── build_research.sh      # Research environment build script
+│   ├── build_research.bat     # Research environment build script (Windows)
+│   ├── test_deployment.sh     # Deployment test script
+│   ├── test_deployment.bat    # Deployment test script (Windows)
 │   └── cleanup.sh             # Cleanup script
 └── env/
     ├── .env.example           # Environment variables example
@@ -25,45 +30,98 @@ Docker-Deployment/
 
 ## Quick Start
 
-### Development Environment
+### Method 1: Research Environment (Jupyter Lab + All Components)
 
-1. **Build and run with Docker Compose:**
-   ```bash
-   cd Docker-Deployment
-   docker-compose up --build
-   ```
+**Perfect for:** Data analysis, experimentation, notebook development
 
-2. **Access the application:**
-   - Web interface: http://localhost:5000
-   - Health check: http://localhost:5000/health
+```bash
+# Linux/Mac
+cd Docker-Deployment
+chmod +x scripts/build_research.sh
+./scripts/build_research.sh
 
-### Production Environment
-
-1. **Build for production:**
-   ```bash
-   cd Docker-Deployment
-   docker-compose -f docker-compose.prod.yml up --build -d
-   ```
-
-2. **Access the application:**
-   - Web interface: http://localhost (port 80)
-   - HTTPS: https://localhost (port 443, if SSL configured)
-
-### Using Scripts
-
-#### Windows
-```cmd
-cd Docker-Deployment\scripts
-build.bat
-deploy.bat
+# Windows
+cd Docker-Deployment
+scripts\build_research.bat
 ```
 
-#### Linux/Mac
+**Access:**
+- Jupyter Lab: http://localhost:8888 (token: `conmed-rl-research`)
+- Flask App: http://localhost:5000 (optional)
+
+### Method 2: Development Environment (Jupyter + Flask)
+
+**Perfect for:** Full-stack development, testing both research and web components
+
 ```bash
-cd Docker-Deployment/scripts
-chmod +x *.sh
-./build.sh
-./deploy.sh
+cd Docker-Deployment
+docker-compose -f docker-compose.dev.yml up --build -d
+```
+
+**Access:**
+- Jupyter Lab: http://localhost:8888 (token: `conmed-rl-dev`)
+- Flask App: http://localhost:5000
+
+### Method 3: Production Environment
+
+**Perfect for:** Production deployment of the web application
+
+```bash
+cd Docker-Deployment
+docker-compose -f docker-compose.prod.yml up --build -d
+```
+
+**Access:**
+- Web interface: http://localhost (port 80)
+- HTTPS: https://localhost (port 443, if SSL configured)
+
+## Environment Comparison
+
+| Environment | Jupyter Lab | Flask App | Database | Monitoring | Use Case |
+|-------------|-------------|-----------|----------|------------|----------|
+| Research    | ✅ (Primary) | ✅ (Optional) | ✅ (Optional) | ❌ | Data analysis, experimentation |
+| Development | ✅ | ✅ | ✅ | ❌ | Full-stack development |
+| Production  | ❌ | ✅ (Primary) | ❌ | ✅ | Production deployment |
+
+## Available Components in Docker
+
+### ✅ Included Components
+- **ConMedRL** - Core OCRL framework (`/app/ConMedRL/`)
+- **Data** - Data processing modules (`/app/Data/`)
+- **CDM-Software** - Clinical decision support (`/app/CDM-Software/`)
+- **Experiment Notebook** - Jupyter notebooks (`/app/Experiment Notebook/`)
+- **Software_FQE_models** - Trained models (`/app/Software_FQE_models/`)
+
+### 🔧 Usage Examples
+
+#### Using ConMedRL in Jupyter
+```python
+# In Jupyter notebook
+import sys
+sys.path.append('/app')
+
+from ConMedRL.conmedrl import FQI, FQE
+from ConMedRL.data_loader import DataLoader
+from Data.mimic_iv_icu_discharge.data_preprocess import preprocess_data
+
+# Your code here...
+```
+
+#### Using Data Processing
+```python
+# Load and preprocess data
+from Data.mimic_iv_icu_discharge.data_preprocess import preprocess_data
+
+# Process your data
+processed_data = preprocess_data('/app/Data/raw_data.csv')
+```
+
+#### Running Flask Application
+```python
+# Start the clinical decision support system
+from CDM_Software.web_application_demo import app
+
+app.run(host='0.0.0.0', port=5000)
 ```
 
 ## Configuration Options
@@ -73,158 +131,143 @@ chmod +x *.sh
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `FLASK_ENV` | Flask environment | `production` |
-| `FLASK_APP` | Flask application entry point | `web_application_test.py` |
-| `SECRET_KEY` | Flask secret key | `change-me-in-production` |
+| `FLASK_APP` | Flask application entry point | `web_application_demo.py` |
+| `JUPYTER_ENABLE_LAB` | Enable Jupyter Lab | `yes` |
+| `JUPYTER_TOKEN` | Jupyter access token | `conmed-rl-research` |
+| `PYTHONPATH` | Python path | `/app` |
 | `WORKERS` | Number of Gunicorn workers | `2` |
 | `PORT` | Application port | `5000` |
-| `LOG_LEVEL` | Logging level | `INFO` |
 
-### Health Checks
+### Jupyter Configuration
 
-The application includes built-in health checks:
-- **Endpoint:** `/health`
-- **Interval:** 30 seconds
-- **Timeout:** 10 seconds
-- **Retries:** 3
-
-## Deployment Scenarios
-
-### 1. Local Development
-- Use `docker-compose.yml`
-- Hot reload enabled
-- Debug mode on
-- Exposed on port 5000
-
-### 2. Production Deployment
-- Use `docker-compose.prod.yml`
-- Nginx reverse proxy
-- SSL termination
-- Health monitoring
-- Log aggregation
-
-### 3. Cloud Deployment
-- Compatible with AWS ECS, Google Cloud Run, Azure Container Instances
-- Includes health checks and proper logging
-- Configurable scaling options
+The research environment includes:
+- **Jupyter Lab** with full extension support
+- **Matplotlib**, **Seaborn**, **Plotly** for visualization
+- **All project directories** mounted and accessible
+- **Persistent volume** for Jupyter settings
 
 ## Monitoring and Logging
 
 ### View Logs
 ```bash
-# All services
-docker-compose logs -f
+# Research environment
+docker-compose -f docker-compose.research.yml logs -f
 
-# Specific service
-docker-compose logs -f medical-app
+# Development environment
+docker-compose -f docker-compose.dev.yml logs -f
 
-# Last 100 lines
-docker-compose logs --tail=100 medical-app
+# Production environment
+docker-compose -f docker-compose.prod.yml logs -f
 ```
 
 ### Health Monitoring
 ```bash
-# Check container health
-docker ps
+# Check research environment
+curl -f http://localhost:8888/lab
 
-# Check service status
-docker-compose ps
+# Check development environment
+curl -f http://localhost:5000/health
+curl -f http://localhost:8888/lab
 
-# View health check logs
-docker inspect --format='{{json .State.Health}}' container_name
+# Check production environment
+curl -f http://localhost/health
 ```
+
+## Data Persistence
+
+### Jupyter Data
+- Jupyter settings: `jupyter_data` volume
+- Notebook outputs: `notebook_outputs` volume
+- All project files: Mounted from host
+
+### Database Data
+- PostgreSQL data: `postgres_data` volume
+- Persistent across container restarts
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Port Already in Use**
+1. **Port Conflicts**
    ```bash
-   # Check what's using the port
+   # Check port usage
+   netstat -tulpn | grep :8888
    netstat -tulpn | grep :5000
    
-   # Stop conflicting services
-   docker-compose down
+   # Modify port mapping in docker-compose files
    ```
 
-2. **Permission Denied**
-   ```bash
-   # Fix script permissions (Linux/Mac)
-   chmod +x scripts/*.sh
-   ```
-
-3. **Build Failures**
-   ```bash
-   # Clean Docker cache
-   docker system prune -a
-   
-   # Rebuild without cache
-   docker-compose build --no-cache
-   ```
-
-4. **Container Won't Start**
+2. **Jupyter Not Accessible**
    ```bash
    # Check logs
-   docker-compose logs medical-app
+   docker-compose -f docker-compose.research.yml logs conmed-rl-research
    
-   # Check container status
-   docker-compose ps
+   # Check token
+   docker-compose -f docker-compose.research.yml exec conmed-rl-research jupyter lab list
    ```
 
-### Performance Tuning
+3. **Import Errors in Jupyter**
+   ```python
+   # In Jupyter notebook
+   import sys
+   sys.path.append('/app')
+   print(sys.path)
+   
+   # Check if modules are available
+   import os
+   os.listdir('/app')
+   ```
 
-1. **Adjust Worker Count**
-   - Edit `WORKERS` environment variable
-   - Rule of thumb: 2 × CPU cores + 1
-
-2. **Memory Limits**
-   - Set memory limits in docker-compose.yml
-   - Monitor usage with `docker stats`
-
-3. **Volume Optimization**
-   - Use named volumes for better performance
-   - Avoid bind mounts in production
+4. **Flask App Not Starting**
+   ```bash
+   # Check Flask logs
+   docker-compose -f docker-compose.dev.yml logs conmed-rl-dev
+   
+   # Check Flask configuration
+   docker-compose -f docker-compose.dev.yml exec conmed-rl-dev env | grep FLASK
+   ```
 
 ## Security Considerations
 
-1. **Environment Variables**
-   - Never commit real secrets to version control
-   - Use Docker secrets or external secret management
-   - Rotate keys regularly
+1. **Jupyter Token Security**
+   - Change default tokens in production
+   - Use secure tokens for remote access
+   - Consider IP restrictions
 
-2. **Network Security**
-   - Use custom Docker networks in production
-   - Implement proper firewall rules
-   - Enable HTTPS in production
+2. **Container Security**
+   - Runs as non-root user
+   - Minimal attack surface
+   - Regular security updates
 
-3. **Container Security**
-   - Run as non-root user (already configured)
-   - Keep base images updated
-   - Scan for vulnerabilities regularly
+## Migration Guide
 
-## Migration from Old Setup
+If you're upgrading from basic setup:
 
-If you're migrating from the old Docker setup:
-
-1. **Stop old containers:**
+1. **Stop existing containers:**
    ```bash
-   docker stop $(docker ps -q)
-   docker rm $(docker ps -aq)
+   docker-compose down
    ```
 
-2. **Remove old images:**
+2. **Choose new environment:**
    ```bash
-   docker rmi conmedrl
-   ```
-
-3. **Use new deployment:**
-   ```bash
-   cd Docker-Deployment
-   docker-compose up --build
+   # For research
+   docker-compose -f docker-compose.research.yml up -d
+   
+   # For development
+   docker-compose -f docker-compose.dev.yml up -d
    ```
 
 ## Support
 
 For deployment issues:
-- Check the logs first: `docker-compose logs -f`
-- Review this documentation
-- Contact maintainers: maotong.sun@tum.de, jingui.xie@tum.de 
+- Check logs: `docker-compose -f [config-file] logs -f`
+- Review validation guide: `DOCKER_VALIDATION_GUIDE.md`
+- Contact maintainers: maotong.sun@tum.de, jingui.xie@tum.de
+
+## Best Practices
+
+1. **Use research environment** for data analysis and experimentation
+2. **Use development environment** for full-stack development
+3. **Use production environment** for deployment
+4. **Regular backups** of Jupyter notebooks and data
+5. **Monitor resource usage** with `docker stats` 

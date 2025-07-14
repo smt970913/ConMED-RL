@@ -77,6 +77,10 @@ class VariableSearch:
     def __init__(self, d_items_table, search_column = 'label'):
         self.d_items_data = d_items_table
         self.search_column = search_column
+        self.last_search_results = None
+        self.last_keyword = None
+        self.last_api_service = None
+        self.last_api_key = None
         
     def translate_keyword_openai(self, keyword, target_language, api_key):
         """
@@ -144,12 +148,246 @@ class VariableSearch:
             print(f"Translation failed: {e}")
             return keyword
 
+    def _call_llm_api(self, prompt, api_service, api_key, max_tokens=500):
+        """
+        Generic method to call LLM API (OpenAI or Claude)
+        """
+        try:
+            if api_service.lower() == 'openai':
+                url = "https://api.openai.com/v1/chat/completions"
+                headers = {
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json"
+                }
+                data = {
+                    "model": "gpt-3.5-turbo",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "max_tokens": max_tokens,
+                    "temperature": 0.3
+                }
+                response = requests.post(url, headers=headers, json=data)
+                response.raise_for_status()
+                result = response.json()
+                return result['choices'][0]['message']['content'].strip()
+                
+            elif api_service.lower() == 'claude':
+                url = "https://api.anthropic.com/v1/messages"
+                headers = {
+                    "x-api-key": api_key,
+                    "Content-Type": "application/json",
+                    "anthropic-version": "2023-06-01"
+                }
+                data = {
+                    "model": "claude-3-5-sonnet-20240620",
+                    "max_tokens": max_tokens,
+                    "messages": [{"role": "user", "content": prompt}]
+                }
+                response = requests.post(url, headers=headers, json=data)
+                response.raise_for_status()
+                result = response.json()
+                return result['content'][0]['text'].strip()
+            else:
+                return "Unsupported API service"
+                
+        except Exception as e:
+            return f"API call failed: {e}"
+
+    def _analyze_search_column_variables(self, keyword, api_service, api_key):
+        """
+        Use LLM to analyze which variables in search_column might be related to the keyword
+        """
+        unique_values = self.d_items_data[self.search_column].unique()
+        # Limit the number of values to analyze to avoid API limits
+        unique_values = unique_values[:100] if len(unique_values) > 100 else unique_values
+        
+        prompt = f"""
+        As a medical data expert, analyze the following list of medical variables and identify which ones might be related to the search keyword: "{keyword}".
+
+        Variables to analyze:
+        {', '.join([str(v) for v in unique_values if pd.notna(v)])}
+
+        Please:
+        1. List the variables that are most likely related to "{keyword}"
+        2. Provide a brief explanation for each selected variable
+        3. Rate the relevance on a scale of 1-5 (5 being most relevant)
+        4. Format your response as:
+           - Variable Name (Relevance: X/5): Brief explanation
+
+        Focus on medical relevance and semantic similarity.
+        """
+        
+        response = self._call_llm_api(prompt, api_service, api_key, max_tokens=800)
+        return response
+
+    def _analyze_unit_columns(self, keyword, api_service, api_key):
+        """
+        Analyze unit columns to find relevant units related to the keyword
+        """
+        # Find columns containing 'unit' in their name
+        unit_columns = [col for col in self.d_items_data.columns if 'unit' in col.lower()]
+        
+        if not unit_columns:
+            return "No unit columns found in the dataset."
+        
+        # Get unique values from unit columns
+        all_units = set()
+        for col in unit_columns:
+            units = self.d_items_data[col].dropna().unique()
+            all_units.update(units)
+        
+        # Limit units to analyze
+        all_units = list(all_units)[:50] if len(all_units) > 50 else list(all_units)
+        
+        prompt = f"""
+        As a medical data expert, analyze the following list of measurement units and identify which ones might be related to the search keyword: "{keyword}".
+
+        Available unit columns: {', '.join(unit_columns)}
+        
+        Units to analyze:
+        {', '.join([str(u) for u in all_units if str(u) != 'nan'])}
+
+        Please:
+        1. List the units that are most likely related to "{keyword}"
+        2. Explain why each unit is relevant to the keyword
+        3. Rate the relevance on a scale of 1-5 (5 being most relevant)
+        4. Format your response as:
+           - Unit (Relevance: X/5): Brief explanation of relevance
+
+        Focus on medical measurement context and relevance to the keyword.
+        """
+        
+        response = self._call_llm_api(prompt, api_service, api_key, max_tokens=800)
+        return response
+
+    def _get_variables_by_units(self, selected_units):
+        """
+        Get variables that use the selected units
+        """
+        unit_columns = [col for col in self.d_items_data.columns if 'unit' in col.lower()]
+        if not unit_columns:
+            return []
+        
+        related_items = []
+        for unit_col in unit_columns:
+            mask = self.d_items_data[unit_col].isin(selected_units)
+            related_data = self.d_items_data[mask]
+            related_items.extend(related_data['itemid'].tolist())
+        
+        return list(set(related_items))
+
+    def _interactive_chatbot_mode(self, keyword, api_service, api_key):
+        """
+        Interactive chatbot mode for enhanced search
+        """
+        print("\n" + "="*60)
+        print("🤖 ENHANCED SEARCH ASSISTANT")
+        print("="*60)
+        print(f"I see you're looking for variables related to: '{keyword}'")
+        print("I can help you find more relevant variables using AI analysis.")
+        print("\nPlease choose an option:")
+        print("1. 📊 Analyze all available variable names for relevance")
+        print("2. 🔬 Search by measurement units")
+        print("3. 💬 Chat with assistant (ask questions about the search)")
+        print("4. ❌ Exit enhanced search")
+        
+        while True:
+            try:
+                choice = input("\nEnter your choice (1-4): ").strip()
+                
+                if choice == '1':
+                    print("\n🔍 Analyzing variable names...")
+                    analysis = self._analyze_search_column_variables(keyword, api_service, api_key)
+                    print("\n📊 VARIABLE ANALYSIS RESULTS:")
+                    print("-" * 40)
+                    print(analysis)
+                    
+                    # Ask if user wants to add these to search results
+                    add_to_search = input("\nWould you like to search for specific variables mentioned above? (y/n): ").lower()
+                    if add_to_search == 'y':
+                        manual_vars = input("Enter variable names (comma-separated): ").strip()
+                        if manual_vars:
+                            additional_results = self._search_manual_variables(manual_vars.split(','))
+                            print(f"\n✅ Found {len(additional_results)} additional items from manual search")
+                            return additional_results
+                    
+                elif choice == '2':
+                    print("\n🔬 Analyzing measurement units...")
+                    unit_analysis = self._analyze_unit_columns(keyword, api_service, api_key)
+                    print("\n🔬 UNIT ANALYSIS RESULTS:")
+                    print("-" * 40)
+                    print(unit_analysis)
+                    
+                    # Ask if user wants to search by units
+                    search_by_units = input("\nWould you like to search by specific units? (y/n): ").lower()
+                    if search_by_units == 'y':
+                        units_input = input("Enter unit names (comma-separated): ").strip()
+                        if units_input:
+                            selected_units = [u.strip() for u in units_input.split(',')]
+                            unit_results = self._get_variables_by_units(selected_units)
+                            print(f"\n✅ Found {len(unit_results)} items with selected units")
+                            return unit_results
+                    
+                elif choice == '3':
+                    print("\n💬 Chat mode activated! Ask me anything about your search.")
+                    print("Type 'exit' to return to the main menu.")
+                    
+                    while True:
+                        user_question = input("\nYour question: ").strip()
+                        if user_question.lower() == 'exit':
+                            break
+                        
+                        chat_prompt = f"""
+                        You are a medical data search assistant. The user is looking for variables related to '{keyword}' in a medical database.
+                        
+                        User's question: {user_question}
+                        
+                        Please provide helpful information about:
+                        - Medical terminology related to '{keyword}'
+                        - Common measurement units or parameters
+                        - Alternative search terms or synonyms
+                        - General guidance for medical data search
+                        
+                        Keep your response concise and focused on helping the user find relevant variables.
+                        """
+                        
+                        response = self._call_llm_api(chat_prompt, api_service, api_key, max_tokens=400)
+                        print(f"\n🤖 Assistant: {response}")
+                
+                elif choice == '4':
+                    print("\n👋 Exiting enhanced search mode...")
+                    return []
+                
+                else:
+                    print("❌ Invalid choice. Please enter 1, 2, 3, or 4.")
+                    
+            except KeyboardInterrupt:
+                print("\n👋 Exiting enhanced search mode...")
+                return []
+            except Exception as e:
+                print(f"❌ Error: {e}")
+
+    def _search_manual_variables(self, variable_names):
+        """
+        Search for specific variable names manually entered by user
+        """
+        results = []
+        for var_name in variable_names:
+            var_name = var_name.strip()
+            if var_name:
+                # Case insensitive search
+                mask = self.d_items_data[self.search_column].str.contains(var_name, case=False, na=False)
+                matched_items = self.d_items_data[mask]['itemid'].tolist()
+                results.extend(matched_items)
+        
+        return list(set(results))
+
     def search_by_keyword(self, keyword, 
                           output_column = 'itemid', use_regex = False, 
                           enable_translation = False, target_languages = None, 
-                          translation_service = 'openai', api_key = None, custom_translator = None):
+                          translation_service = 'openai', api_key = None, custom_translator = None,
+                          enable_interactive_mode = False):
         """
-        Enhanced search with multilingual support
+        Enhanced search with multilingual, case-insensitive support and interactive chatbot mode
         
         Parameters:
         - keyword: Original search keyword
@@ -160,45 +398,102 @@ class VariableSearch:
         - translation_service: 'openai', 'claude', or 'custom'
         - api_key: API key for translation service
         - custom_translator: Custom translation function
+        - enable_interactive_mode: Whether to enable interactive chatbot mode if initial search is unsatisfactory
         """
         
-        search_terms = [keyword] 
+        # Store for potential interactive mode
+        self.last_keyword = keyword
+        self.last_api_service = translation_service
+        self.last_api_key = api_key
+        
+        # Generate multiple case variations of the keyword for comprehensive search
+        search_terms = set()  # Use set to avoid duplicates
+        
+        # Add original keyword
+        search_terms.add(keyword)
+        
+        # Add various case variations
+        search_terms.add(keyword.lower())           # all lowercase
+        search_terms.add(keyword.upper())           # all uppercase
+        search_terms.add(keyword.capitalize())      # first letter uppercase
+        search_terms.add(keyword.title())           # title case (each word capitalized)
+        
+        # Convert back to list for processing
+        search_terms = list(search_terms)
         
         # Add translated keywords if translation is enabled
         if enable_translation and target_languages:
-            for lang in target_languages:
-                if translation_service == 'openai' and api_key:
-                    translated = self.translate_keyword_openai(keyword, lang, api_key)
-                elif translation_service == 'claude' and api_key:
-                    translated = self.translate_keyword_claude(keyword, lang, api_key)
-                elif translation_service == 'custom' and custom_translator:
-                    translated = self.translate_keyword_custom(keyword, lang, custom_translator)
-                else:
-                    print(f"Translation service not configured properly for {lang}")
-                    continue
-                
-                if translated and translated != keyword:
-                    search_terms.append(translated)
-                    print(f"Translated '{keyword}' to {lang}: '{translated}'")
+            translated_terms = []
+            for term in search_terms:
+                for lang in target_languages:
+                    if translation_service == 'openai' and api_key:
+                        translated = self.translate_keyword_openai(term, lang, api_key)
+                    elif translation_service == 'claude' and api_key:
+                        translated = self.translate_keyword_claude(term, lang, api_key)
+                    elif translation_service == 'custom' and custom_translator:
+                        translated = self.translate_keyword_custom(term, lang, custom_translator)
+                    else:
+                        print(f"Translation service not configured properly for {lang}")
+                        continue
+                    
+                    if translated and translated != term:
+                        translated_terms.append(translated)
+                        print(f"Translated '{term}' to {lang}: '{translated}'")
+            
+            search_terms.extend(translated_terms)
         
-        # Perform search with all terms (original + translated)
+        # Remove duplicates from final search terms
+        search_terms = list(set(search_terms))
+        
+        # Perform search with all terms (original + case variations + translated)
         all_filtered_data = pd.DataFrame()
         
         for term in search_terms:
             if use_regex:
-                # Use regular expressions for searching
+                # Use regular expressions for searching with case insensitive flag
                 pattern = re.compile(term, re.IGNORECASE)
                 filtered_data = self.d_items_data[self.d_items_data[self.search_column].str.contains(pattern, na = False)]
             else:
-                # Use simple string matching
+                # Use simple string matching with case insensitive search
                 filtered_data = self.d_items_data[self.d_items_data[self.search_column].str.contains(term, case = False, na = False)]
             
             all_filtered_data = pd.concat([all_filtered_data, filtered_data], ignore_index=True)
         
-        # Remove duplicates and return results
+        # Remove duplicates and get results
         all_filtered_data = all_filtered_data.drop_duplicates()
-
-        return all_filtered_data[output_column].tolist()
+        initial_results = all_filtered_data[output_column].tolist()
+        
+        # Store results for potential interactive mode
+        self.last_search_results = initial_results
+        
+        # Check if interactive mode should be activated
+        if enable_interactive_mode and api_key and translation_service in ['openai', 'claude']:
+            print(f"\n🔍 Initial search found {len(initial_results)} results for '{keyword}'")
+            
+            if len(initial_results) == 0:
+                print("❌ No results found with basic search.")
+                activate_interactive = input("Would you like to try enhanced AI search? (y/n): ").lower()
+            else:
+                print(f"✅ Found {len(initial_results)} results")
+                # Show some sample results
+                if len(initial_results) > 0:
+                    sample_data = all_filtered_data.head(5)
+                    print("\nSample results:")
+                    for _, row in sample_data.iterrows():
+                        print(f"  - {row[self.search_column]} (ID: {row['itemid']})")
+                
+                activate_interactive = input("\nAre you satisfied with these results, or would you like to try enhanced AI search? (satisfied/enhance): ").lower()
+                activate_interactive = 'y' if activate_interactive == 'enhance' else 'n'
+            
+            if activate_interactive == 'y':
+                additional_results = self._interactive_chatbot_mode(keyword, translation_service, api_key)
+                if additional_results:
+                    # Combine initial results with additional results
+                    combined_results = list(set(initial_results + additional_results))
+                    print(f"\n🎉 Final results: {len(combined_results)} items (initial: {len(initial_results)}, additional: {len(additional_results)})")
+                    return combined_results
+        
+        return initial_results
     
     def batch_search_multilingual(self, keywords, target_languages = None, **kwargs):
         """
@@ -221,6 +516,32 @@ class VariableSearch:
         
         # Remove duplicates and return
         return list(set(all_results))
+    
+    def get_search_summary(self):
+        """
+        Get a summary of the last search performed
+        """
+        if self.last_search_results is None:
+            return "No search has been performed yet."
+        
+        summary = f"""
+        📊 Search Summary:
+        - Keyword: '{self.last_keyword}'
+        - Results found: {len(self.last_search_results)}
+        - API service used: {self.last_api_service}
+        """
+        
+        return summary
+    
+    def clear_search_history(self):
+        """
+        Clear the search history
+        """
+        self.last_search_results = None
+        self.last_keyword = None
+        self.last_api_service = None
+        self.last_api_key = None
+        print("🧹 Search history cleared.")
 
 class VariableSelect:
     def __init__(self, d_items_table, item_id_list):

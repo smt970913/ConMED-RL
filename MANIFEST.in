@@ -1,31 +1,33 @@
 include README.md
 include LICENSE
 include requirements.txt
-include runtime.txt
 
-# Include data processing modules
+# Include ConMedRL library
+recursive-include ConMedRL *.py
+recursive-exclude ConMedRL __pycache__
+recursive-exclude ConMedRL *.pyc
+
+# Include Data processing modules
 recursive-include Data *.py
 recursive-exclude Data __pycache__
 recursive-exclude Data *.pyc
 
-# Include pre-trained models
-recursive-include Software_FQE_models *.pkl *.pt *.pth *.json
-recursive-exclude Software_FQE_models __pycache__
-recursive-exclude Software_FQE_models *.pyc
-
-# Include experiment notebooks (as examples)
-recursive-include "Experiment Notebook" *.ipynb
-recursive-exclude "Experiment Notebook" .ipynb_checkpoints
-
-# Include documentation images
-recursive-include image *.png *.svg *.jpg *.jpeg
-
 # Exclude development and deployment files
 exclude Procfile
 exclude .gitignore
+exclude build_package.py
+exclude runtime.txt
 
-# Exclude Docker deployment directory (contains all Docker-related files)
+# Exclude all other directories not needed for package
+prune CDM-Software
 prune Docker-Deployment
-
-# Exclude CDM-Software directory (as requested)
-prune CDM-Software 
+prune Software_FQE_models
+prune "Experiment Notebook"
+prune image
+prune model_output
+prune models
+prune build
+prune dist
+prune concarerl.egg-info
+prune .git
+prune .idea 

@@ -29,7 +29,7 @@ def get_version():
     return "1.0.0"
 
 setup(
-    name="concarerl",
+    name="ConMedRL",
     version=get_version(),
     author="Maotong Sun, Jingui Xie",
     author_email="maotong.sun@tum.de, jingui.xie@tum.de",
@@ -42,7 +42,7 @@ setup(
         "Documentation": "https://github.com/smt970913/ConMED-RL#readme",
         "Source Code": "https://github.com/smt970913/ConMED-RL",
     },
-    packages=find_packages(include=["ConMedRL", "ConMedRL.*", "conmedrl", "conmedrl.*"]),
+    packages=find_packages(include=["ConMedRL", "ConMedRL.*", "Data", "Data.*"]),
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Healthcare Industry",
@@ -78,14 +78,11 @@ setup(
         ]
     },
     package_data={
-        "concarerl": [
-            "models/*.pkl",
-            "models/*.pt", 
-            "models/*.pth",
-            "data/templates/*.json",
-        ],
         "ConMedRL": [
             "*.py",
+        ],
+        "Data": [
+            "**/*.py",
         ]
     },
     include_package_data=True,

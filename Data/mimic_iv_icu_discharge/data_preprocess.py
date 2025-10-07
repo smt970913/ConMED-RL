@@ -706,8 +706,8 @@ class PatientDataProcess:
 
     def denote_death_cases(self, admission_data, patients_data, death_observation_days = 30):
 
-        patients_data_select = patients_data.drop(columns = ['anchor_year', 'anchor_year_group'])
-        admission_data_select = admission_data[['subject_id', 'hadm_id', 'admittime', 'dischtime', 'deathtime', 'admission_type', 'race']]
+        patients_data_select = patients_data.drop(columns = ['anchor_year'])
+        admission_data_select = admission_data[['subject_id', 'hadm_id', 'admittime', 'dischtime', 'deathtime', 'admission_type', 'insurance', 'race']]
 
         patients_data_select = patients_data_select[patients_data_select['subject_id'].isin(self.ICU_patient_data['subject_id'])]
         admission_data_select = admission_data_select[admission_data_select['subject_id'].isin(self.ICU_patient_data['subject_id'])]
@@ -791,7 +791,8 @@ class GenerateDataSet:
         sub_data = data.loc[(data['charttime'] >= i_1) & (data['charttime'] <= i_2) & (data["itemid"] == i_3)]
         return sub_data
 
-    def dataset_generation(self, physio_table):
+    ### physio_table needs to be constructed by the user manually, and it could include the columns do not need to go through the chart_events_data
+    def dataset_generation(self, physio_table, readmission_observation_days = 30):
         icu_stay_list = pd.unique(self.icu_patient_data['stay_id'])
         for i in range(len(icu_stay_list)):
             
@@ -808,11 +809,11 @@ class GenerateDataSet:
                 physio_table['icu_starttime'].append(self.icu_patient_data['intime'].iloc[i])
                 physio_table['icu_endtime'].append(self.icu_patient_data['outtime'].iloc[i]) 
                 physio_table['los'].append(self.icu_patient_data['los'].iloc[i])        
-                physio_table['discharge_fail'].append(self.icu_patient_data['discharge_fail_30_day'].iloc[i])
-                physio_table['readmission'].append(self.icu_patient_data['readmission_30_day'].iloc[i])
+                physio_table['discharge_fail'].append(self.icu_patient_data[f'discharge_fail_{readmission_observation_days}_day'].iloc[i])
+                physio_table['readmission'].append(self.icu_patient_data[f'readmission_{readmission_observation_days}_day'].iloc[i])
                 physio_table['readmission_count'].append(self.icu_patient_data['readmission_count_30_day'].iloc[i])
                 physio_table['death_in_ICU'].append(self.icu_patient_data['death_in_ICU'].iloc[i])
-                physio_table['death_out_ICU'].append(self.icu_patient_data['death_out_ICU_30_day'].iloc[i])
+                physio_table['death_out_ICU'].append(self.icu_patient_data[f'death_out_ICU_{readmission_observation_days}_day'].iloc[i])
                 physio_table['age'].append(self.icu_patient_data['anchor_age'].iloc[i])
                 physio_table['gender'].append(self.icu_patient_data['gender'].iloc[i])
                 physio_table['race'].append(self.icu_patient_data['race'].iloc[i])
@@ -1086,13 +1087,17 @@ class PatientDataImputation:
         
         return drop_list, middle_list, knn_list
 
-    def forward_fill_missing_values(self, var_list = []):
+    def forward_fill_missing_values(self, according_list = ['stay_id', 'readmission_count'], var_list = []):
         for i in range(len(var_list)):
-            self.generated_dataset[var_list[i]] = self.generated_dataset.groupby(by = ['stay_id', 'readmission_count'])[var_list[i]].ffill()
+            self.generated_dataset[var_list[i]] = self.generated_dataset.groupby(by = according_list)[var_list[i]].ffill()
 
-    def linear_impute_missing_values(self, var_list = []):
+    def linear_impute_missing_values(self, according_list = ['stay_id', 'readmission_count'], var_list = []):
         for i in range(len(var_list)):
-            self.generated_dataset[var_list[i]] = self.generated_dataset.groupby(by = ['stay_id', 'readmission_count'])[var_list[i]].apply(lambda x: x.interpolate(method = 'linear'))
+            self.generated_dataset[var_list[i]] = self.generated_dataset.groupby(by = according_list)[var_list[i]].apply(lambda x: x.interpolate(method = 'linear'))
+
+    def mean_impute_missing_values(self, according_list = ['stay_id', 'readmission_count'], var_list = []):
+        for var in var_list:
+            self.generated_dataset[var] = (self.generated_dataset.groupby(by = according_list)[var].transform(lambda s: s.fillna(s.mean())))
 
     def process_chunk(self, chunk, imputer):
         chunk_imputed = imputer.fit_transform(chunk)  
@@ -1153,8 +1158,10 @@ class StateSpaceBuilder:
         self.scaler = None  # Store the fitted scaler
         self.scaler_feature_names = None  # Store the feature names used for scaling
 
-    def drop_duplicate_rows(self):
-        self.generated_dataset = self.generated_dataset.drop_duplicates()
+    def drop_duplicate_rows(self, subset = []):
+        ### note that subset is the columns to be considered for dropping duplicates
+        self.generated_dataset = self.generated_dataset.drop_duplicates(subset = subset, keep = 'first')
+        
         m = self.generated_dataset[self.generated_dataset['discharge_action'] == 1]
         duplicates = m[m.duplicated(subset=['stay_id'])]
         if len(duplicates) > 0:
@@ -1191,6 +1198,10 @@ class StateSpaceBuilder:
         self.generated_dataset = self.generated_dataset.drop(columns = ['Respiratory Rate', 'Respiratory Rate (spontaneous)', 'Respiratory Rate (Set)', 'Respiratory Rate (Total)', 
                                                                         'Tidal Volume (spontaneous)', 'Tidal Volume (set)', 'Tidal Volume (observed)']).copy()
         
+    ### Denote the decision epoch in the dataset
+    def denote_decision_epoch(self):
+        self.generated_dataset['epoch'] = self.generated_dataset.groupby(['stay_id', 'readmission_count']).cumcount() + 1
+    
     def icu_discharge_data_selection(self, los_threshold = 15.0):
         self.generated_dataset = self.generated_dataset[~self.generated_dataset['subject_id'].isin(pd.unique(self.generated_dataset[self.generated_dataset['los'] > los_threshold]['subject_id']))].copy()
         self.generated_dataset = self.generated_dataset.reset_index(drop = True)
@@ -1198,8 +1209,6 @@ class StateSpaceBuilder:
         drop_patient_list = self.generated_dataset.loc[self.generated_dataset['readmission_count'] >= 6, 'subject_id'].tolist()
         self.generated_dataset = self.generated_dataset[~self.generated_dataset['subject_id'].isin(drop_patient_list)].copy()
         self.generated_dataset = self.generated_dataset.reset_index(drop = True)
-
-        self.generated_dataset['epoch'] = self.generated_dataset.groupby(['stay_id', 'readmission_count']).cumcount() + 1
 
         self.generated_dataset['id_delete'] = 0.0
         condition_1 = (self.generated_dataset['readmission_count'] == 0) & (self.generated_dataset['death_in_ICU'] == 1)

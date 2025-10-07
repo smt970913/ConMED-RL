@@ -87,5 +87,3 @@ python web_application_demo.py
 1. Create Container Instance
 2. Use the Docker images from Docker-Deployment
 3. Configure environment variables
-
-## 🔧 Configuration 

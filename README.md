@@ -8,6 +8,8 @@ This repository provides the implementation of an **Offline Constrained Reinforc
 In addition to the codebase, we provide two curated datasets designed to facilitate further research on extubation and discharge decision-making tasks.
 This repository is created by **Maotong Sun** (maotong.sun@tum.de) and **Jingui Xie** (jingui.xie@tum.de).
 
+**This toolkit is based on our accepted paper on ICU discharge decision-making published in *IISE Transactions on Healthcare Systems Engineering* (available in the `Previous_Research/` folder). The research on ICU extubation decision-making is currently under review.**
+
 ## Repository Structure
 
 ```
@@ -59,6 +61,9 @@ ICU-Decision Making-OCRL/
 ├── Software_FQE_models/                     # Pre-trained models and software tools
 │   ├── discharge_decision_making/           # Discharge decision models  
 │   └── extubation_decision_making/          # Extubation decision models
+│
+├── Previous_Research/                       # Published research papers
+│   └── IISE-Transactions-on-HSE_2025_Discharge_with_Multiple_Readmissions_and_Constraints.pdf
 │
 ├── image/                                   # Documentation images
 │
@@ -160,7 +165,7 @@ ConMED-RL supports multiple installation methods to accommodate different use ca
    - **Production:** http://localhost (port 80)
    - **Monitoring:** http://localhost:3000 (Grafana), http://localhost:9090 (Prometheus)
 
-### Method 3: PyPI Installation (Recommended for Core Framework)
+### Method 3: PyPI Installation (Recommended for Core Algorithm Module)
 
 For the core ConMED-RL framework without the web application:
 
@@ -399,7 +404,7 @@ The `CDM-Software/` directory contains the clinical decision support software im
 
 The core software module that implements the necessary Fitted-Q-Evaluation (FQE) model inside our OCRL framework optimized for real-time clinical decision support.
 
-#### Web Application (`web_application_test.py`)
+#### Web Application (`web_application_demo.py`)
 
 A `Flask`-based web application that provides an intuitive interface for clinical decision-making.
 

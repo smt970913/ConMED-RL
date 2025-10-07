@@ -123,7 +123,7 @@ def get_patient_labels(decision_type):
             'Oxygen Saturation (SaO2, %)',  # SaO2
             'Glasgow Coma Scale (GCS) Score',  # GCS score
             'Respiratory Rate (breaths/min)',  # Respiratory Rate
-            'Tidal Volume (mL)',  # Tidal Volume
+            'Tidal Volume (L)',  # Tidal Volume
             'Readmission Count'  # readmission_count
         ]
     elif decision_type == 'extubation':
@@ -158,7 +158,7 @@ def get_patient_labels(decision_type):
             'Glasgow Coma Scale (GCS) Score',  # GCS score
             'Positive End-Expiratory Pressure (PEEP, cmH2O)',  # PEEP
             'Respiratory Rate (breaths/min)',  # Respiratory Rate
-            'Tidal Volume (mL)',  # Tidal Volume
+            'Tidal Volume (L)',  # Tidal Volume
         ]
     else:
         return []
@@ -176,42 +176,42 @@ def get_field_configs(decision_type):
     if decision_type == 'discharge':
         # Discharge decision making field configurations (37 fields)
         return {
-            0: {'min': 0, 'max': 120, 'step': 0.1, 'placeholder': 'e.g.: 65'},
+            0: {'min': 0, 'max': 100, 'step': 0.1, 'placeholder': 'e.g.: 65'},
             1: {'type': 'select'},
-            2: {'min': 30, 'max': 200, 'step': 0.1, 'placeholder': 'e.g.: 70'},
-            3: {'min': 30, 'max': 200, 'step': 0.1, 'placeholder': 'e.g.: 85'},
-            4: {'min': 60, 'max': 120, 'step': 0.1, 'placeholder': 'e.g.: 95'},
-            5: {'min': 5, 'max': 20, 'step': 0.1, 'placeholder': 'e.g.: 12.5'},
-            6: {'min': 25, 'max': 60, 'step': 0.1, 'placeholder': 'e.g.: 40'},
-            7: {'min': 7.0, 'max': 7.8, 'step': 0.01, 'placeholder': 'e.g.: 7.35'},
-            8: {'min': 15, 'max': 60, 'step': 0.1, 'placeholder': 'e.g.: 38'},
-            9: {'min': 2, 'max': 20, 'step': 0.1, 'placeholder': 'e.g.: 8.5'},
-            10: {'min': 90, 'max': 120, 'step': 0.1, 'placeholder': 'e.g.: 102'},
-            11: {'min': 0.5, 'max': 10, 'step': 0.1, 'placeholder': 'e.g.: 1.2'},
-            12: {'min': 50, 'max': 400, 'step': 1, 'placeholder': 'e.g.: 110'},
-            13: {'min': 1.0, 'max': 5.0, 'step': 0.1, 'placeholder': 'e.g.: 2.0'},
-            14: {'min': 130, 'max': 155, 'step': 1, 'placeholder': 'e.g.: 140'},
-            15: {'min': 7.2, 'max': 7.6, 'step': 0.01, 'placeholder': 'e.g.: 7.4'},
-            16: {'min': 21, 'max': 100, 'step': 1, 'placeholder': 'e.g.: 40'},
-            17: {'min': -15, 'max': 15, 'step': 0.1, 'placeholder': 'e.g.: -2'},
-            18: {'min': 5, 'max': 100, 'step': 1, 'placeholder': 'e.g.: 25'},
-            19: {'min': 0.8, 'max': 1.5, 'step': 0.01, 'placeholder': 'e.g.: 1.15'},
-            20: {'min': 0.2, 'max': 10, 'step': 0.1, 'placeholder': 'e.g.: 1.5'},
-            21: {'min': 50, 'max': 400, 'step': 1, 'placeholder': 'e.g.: 110'},
-            22: {'min': 3.0, 'max': 6.0, 'step': 0.1, 'placeholder': 'e.g.: 4.0'},
-            23: {'min': 15, 'max': 35, 'step': 0.1, 'placeholder': 'e.g.: 24'},
-            24: {'min': 50, 'max': 500, 'step': 1, 'placeholder': 'e.g.: 250'},
-            25: {'min': 8, 'max': 20, 'step': 0.1, 'placeholder': 'e.g.: 12'},
-            26: {'min': 20, 'max': 80, 'step': 0.1, 'placeholder': 'e.g.: 35'},
-            27: {'min': 0.8, 'max': 5.0, 'step': 0.1, 'placeholder': 'e.g.: 1.2'},
-            28: {'min': 60, 'max': 250, 'step': 0.1, 'placeholder': 'e.g.: 120'},
-            29: {'min': 40, 'max': 120, 'step': 0.1, 'placeholder': 'e.g.: 70'},
-            30: {'min': 50, 'max': 150, 'step': 0.1, 'placeholder': 'e.g.: 90'},
-            31: {'min': 35, 'max': 42, 'step': 0.1, 'placeholder': 'e.g.: 36.5'},
-            32: {'min': 70, 'max': 100, 'step': 0.1, 'placeholder': 'e.g.: 98'},
-            33: {'type': 'select'},
-            34: {'min': 10, 'max': 40, 'step': 1, 'placeholder': 'e.g.: 18'},
-            35: {'min': 200, 'max': 800, 'step': 10, 'placeholder': 'e.g.: 450'},
+            2: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 70'},
+            3: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 85'},
+            4: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 95'},
+            5: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 12.5'},
+            6: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 40'},
+            7: {'min': 0, 'max': 500, 'step': 0.01, 'placeholder': 'e.g.: 7.35'},
+            8: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 38'},
+            9: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 8.5'},
+            10: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 102'},
+            11: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 1.2'},
+            12: {'min': 0, 'max': 500, 'step': 1, 'placeholder': 'e.g.: 110'},
+            13: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 2.0'},
+            14: {'min': 0, 'max': 500, 'step': 1, 'placeholder': 'e.g.: 140'},
+            15: {'min': 0, 'max': 500, 'step': 0.01, 'placeholder': 'e.g.: 7.4'},
+            16: {'min': 0, 'max': 500, 'step': 1, 'placeholder': 'e.g.: 40'},
+            17: {'min': -100, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: -2'},
+            18: {'min': 0, 'max': 100, 'step': 1, 'placeholder': 'e.g.: 25'},
+            19: {'min': 0, 'max': 500, 'step': 0.01, 'placeholder': 'e.g.: 1.15'},
+            20: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 1.5'},
+            21: {'min': 0, 'max': 500, 'step': 1, 'placeholder': 'e.g.: 110'},
+            22: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 4.0'},
+            23: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 24'},
+            24: {'min': 0, 'max': 500, 'step': 1, 'placeholder': 'e.g.: 250'},
+            25: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 12'},
+            26: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 35'},
+            27: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 1.2'},
+            28: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 120'},
+            29: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 70'},
+            30: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 90'},
+            31: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 36.5'},
+            32: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 98'},
+            33: {'min': 3, 'max': 15, 'step': 0.1, 'placeholder': 'e.g.: 10'},
+            34: {'min': 0, 'max': 100, 'step': 1, 'placeholder': 'e.g.: 18'},
+            35: {'min': 0, 'max': 2.0, 'step': 0.01, 'placeholder': 'e.g.: 0.45'},
             36: {'min': 0, 'max': 10, 'step': 1, 'placeholder': 'e.g.: 0'}
         }
     elif decision_type == 'extubation':
@@ -219,34 +219,34 @@ def get_field_configs(decision_type):
         return {
             0: {'min': 0, 'max': 120, 'step': 0.1, 'placeholder': 'e.g.: 65'},
             1: {'type': 'select'},
-            2: {'min': 30, 'max': 200, 'step': 0.1, 'placeholder': 'e.g.: 70'},
-            3: {'min': 30, 'max': 200, 'step': 0.1, 'placeholder': 'e.g.: 85'},
-            4: {'min': 60, 'max': 120, 'step': 0.1, 'placeholder': 'e.g.: 95'},
-            5: {'min': 5, 'max': 20, 'step': 0.1, 'placeholder': 'e.g.: 12.5'},
-            6: {'min': 25, 'max': 60, 'step': 0.1, 'placeholder': 'e.g.: 40'},
-            7: {'min': 15, 'max': 60, 'step': 0.1, 'placeholder': 'e.g.: 38'},
-            8: {'min': 2, 'max': 20, 'step': 0.1, 'placeholder': 'e.g.: 8.5'},
-            9: {'min': 90, 'max': 120, 'step': 0.1, 'placeholder': 'e.g.: 102'},
-            10: {'min': 0.5, 'max': 10, 'step': 0.1, 'placeholder': 'e.g.: 1.2'},
-            11: {'min': 50, 'max': 400, 'step': 1, 'placeholder': 'e.g.: 110'},
-            12: {'min': 1.0, 'max': 5.0, 'step': 0.1, 'placeholder': 'e.g.: 2.0'},
-            13: {'min': 130, 'max': 155, 'step': 1, 'placeholder': 'e.g.: 140'},
-            14: {'min': 7.2, 'max': 7.6, 'step': 0.01, 'placeholder': 'e.g.: 7.4'},
-            15: {'min': 21, 'max': 100, 'step': 1, 'placeholder': 'e.g.: 40'},
-            16: {'min': -15, 'max': 15, 'step': 0.1, 'placeholder': 'e.g.: -2'},
-            17: {'min': 5, 'max': 100, 'step': 1, 'placeholder': 'e.g.: 25'},
-            18: {'min': 3.0, 'max': 6.0, 'step': 0.1, 'placeholder': 'e.g.: 4.0'},
-            19: {'min': 15, 'max': 35, 'step': 0.1, 'placeholder': 'e.g.: 24'},
-            20: {'min': 50, 'max': 500, 'step': 1, 'placeholder': 'e.g.: 250'},
-            21: {'min': 60, 'max': 250, 'step': 0.1, 'placeholder': 'e.g.: 120'},
-            22: {'min': 40, 'max': 120, 'step': 0.1, 'placeholder': 'e.g.: 70'},
-            23: {'min': 50, 'max': 150, 'step': 0.1, 'placeholder': 'e.g.: 90'},
-            24: {'min': 35, 'max': 42, 'step': 0.1, 'placeholder': 'e.g.: 36.5'},
-            25: {'min': 70, 'max': 100, 'step': 0.1, 'placeholder': 'e.g.: 98'},
-            26: {'type': 'select'},
-            27: {'min': 0, 'max': 20, 'step': 0.1, 'placeholder': 'e.g.: 5.0'},
-            28: {'min': 10, 'max': 40, 'step': 1, 'placeholder': 'e.g.: 18'},
-            29: {'min': 200, 'max': 800, 'step': 10, 'placeholder': 'e.g.: 450'}
+            2: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 70'},
+            3: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 85'},
+            4: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 95'},
+            5: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 12.5'},
+            6: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 40'},
+            7: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 38'},
+            8: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 8.5'},
+            9: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 102'},
+            10: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 1.2'},
+            11: {'min': 0, 'max': 500, 'step': 1, 'placeholder': 'e.g.: 110'},
+            12: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 2.0'},
+            13: {'min': 0, 'max': 500, 'step': 1, 'placeholder': 'e.g.: 140'},
+            14: {'min': 0, 'max': 500, 'step': 0.01, 'placeholder': 'e.g.: 7.4'},
+            15: {'min': 0, 'max': 500, 'step': 1, 'placeholder': 'e.g.: 40'},
+            16: {'min': -100, 'max': 100, 'step': 0.1, 'placeholder': 'e.g.: -2'},
+            17: {'min': 0, 'max': 500, 'step': 1, 'placeholder': 'e.g.: 25'},
+            18: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 4.0'},
+            19: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 24'},
+            20: {'min': 0, 'max': 500, 'step': 1, 'placeholder': 'e.g.: 250'},
+            21: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 120'},
+            22: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 70'},
+            23: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 90'},
+            24: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 36.5'},
+            25: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 98'},
+            26: {'min': 3, 'max': 15, 'step': 0.1, 'placeholder': 'e.g.: 10'},
+            27: {'min': 0, 'max': 25, 'step': 0.1, 'placeholder': 'e.g.: 5.0'},
+            28: {'min': 0, 'max': 100, 'step': 1, 'placeholder': 'e.g.: 18'},
+            29: {'min': 0, 'max': 2.0, 'step': 0.01, 'placeholder': 'e.g.: 0.45'}
         }
     else:
         return {}
@@ -392,9 +392,9 @@ def load_scaler(decision_type):
             # Features: age + indices 2-35 = 1 + 34 = 35 features
             dummy_data = np.array([
                 # Format: [min_values, max_values] for 35 features (excluding gender and readmission_count)
-                # age, weight, HR, ArterialO2, Hgb, ArterialCO2, pH_venous, Hct, WBC, Cl, Cr, Glu, Mg, Na, pH_arterial, FiO2, BE, BUN, Ca, Bili, Glu_blood, K, HCO3, Plt, PT, PTT, INR, SBP, DBP, MBP, Temp, SaO2, RR, TV, extra
-                [18, 40, 60, 70, 8, 25, 7.0, 15, 3, 90, 0.5, 50, 1.0, 130, 7.2, 21, -15, 5, 0.8, 0.2, 50, 3.0, 15, 50, 8, 20, 0.8, 60, 40, 50, 35, 70, 10, 200, 300],  # min values (35 features)
-                [90, 90, 120, 120, 18, 60, 7.8, 50, 15, 120, 8, 300, 4.5, 150, 7.6, 80, 10, 80, 1.4, 8, 350, 5.5, 35, 400, 18, 70, 4.0, 200, 110, 140, 42, 100, 40, 800, 600]   # max values (35 features)
+                # age, weight, HR, ArterialO2, Hgb, ArterialCO2, pH_venous, Hct, WBC, Cl, Cr, Glu, Mg, Na, pH_arterial, FiO2, BE, BUN, Ca, Bili, Glu_blood, K, HCO3, Plt, PT, PTT, INR, SBP, DBP, MBP, Temp, SaO2, GCS score, RR, TV(L)
+                [18, 0.0, 13.5, 0, 2.1, 8.7, 7.0, 6.9, 0.05, 75, 0.0, 0.0, 0.8, 116.0, 7.05, 0.0, -18, 1.0, 0.775, 0.0, 0.0, 1.6, 3.33, 0.0, 7.1, 0.0, 0.5, 30, 6.0, 20.4, 35.0, 85.81, 3.0, 0.0, 0.0],  # min values (35 features)
+                [91, 180.0, 165.3, 337, 18.95, 77.0, 7.71, 55.7, 35.2, 131.0, 4.90, 317.0, 3.475, 161.50, 7.73, 100.00, 17.0, 114.0, 1.468, 7.60, 298.0, 6.5, 45.0, 648.0, 32.30, 108.65, 2.80, 206.08, 119.67, 135.86, 38.69, 106.33, 15.0, 72.0, 1.12]   # max values (35 features)
             ])
             temp_scaler.fit(dummy_data)
             print(f"✓ Temporary MinMaxScaler created for discharge decision making (35 features)")
@@ -405,10 +405,10 @@ def load_scaler(decision_type):
             # Features: age + indices 2-29 = 1 + 28 = 29 features
             dummy_data = np.array([
                 # Generate some sample data points for fitting (29 features)
-                # age, weight, HR, ArterialO2, Hgb, ArterialCO2, Hct, WBC, Cl, Cr, Glu, Mg, Na, pH, FiO2, BE, BUN, K, HCO3, Plt, SBP, DBP, MBP, Temp, SaO2, PEEP, RR, TV
-                [65, 75, 80, 95, 12, 40, 38, 8, 102, 1.2, 110, 2.0, 140, 7.4, 40, -2, 25, 4.0, 24, 250, 120, 70, 90, 36.5, 98, 5.0, 18, 450],
-                [70, 85, 90, 100, 14, 45, 40, 9, 105, 1.3, 120, 2.2, 142, 7.42, 45, -1, 30, 4.2, 26, 280, 130, 75, 95, 37.0, 99, 6.0, 20, 500],
-                [60, 70, 85, 90, 11, 35, 36, 7, 100, 1.1, 100, 1.8, 138, 7.38, 35, -3, 20, 3.8, 22, 220, 110, 65, 85, 36.0, 97, 4.0, 16, 400]
+                # age, weight, HR, ArterialO2, Hgb, ArterialCO2, Hct, WBC, Cl, Cr, Glu, Mg, Na, pH, FiO2, BE, BUN, K, HCO3, Plt, SBP, DBP, MBP, Temp, SaO2, GCS score, PEEP, RR, TV(L)
+                [65, 75, 80, 95, 12, 40, 38, 8, 102, 1.2, 110, 2.0, 140, 7.4, 40, -2, 25, 4.0, 24, 250, 120, 70, 90, 36.5, 98, 10.0, 5.0, 18, 0.45],
+                [70, 85, 90, 100, 14, 45, 40, 9, 105, 1.3, 120, 2.2, 142, 7.42, 45, -1, 30, 4.2, 26, 280, 130, 75, 95, 37.0, 99, 8.0, 6.0, 20, 0.50],
+                [60, 70, 85, 90, 11, 35, 36, 7, 100, 1.1, 100, 1.8, 138, 7.38, 35, -3, 20, 3.8, 22, 220, 110, 65, 85, 36.0, 97, 12.0, 4.0, 16, 0.40]
             ])
             temp_scaler.fit(dummy_data)
             print(f"✓ Temporary StandardScaler created for extubation decision making (29 features)")
@@ -431,7 +431,7 @@ WELCOME_HTML_TEMPLATE = """
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -475,12 +475,12 @@ WELCOME_HTML_TEMPLATE = """
             border-bottom: none;
         }
         .feature-icon {
-            color: #667eea;
+            color: #0891b2;
             margin-right: 15px;
             width: 20px;
         }
         .btn-primary-custom {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
             border: none;
             padding: 15px 40px;
             font-size: 1.1rem;
@@ -709,7 +709,7 @@ PREDICT_HTML_TEMPLATE = """
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         .section-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
             color: white;
             padding: 10px 15px;
             border-radius: 8px 8px 0 0;
@@ -731,7 +731,7 @@ PREDICT_HTML_TEMPLATE = """
             margin-bottom: 20px;
         }
         .btn-submit {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
             border: none;
             padding: 12px 30px;
             font-size: 16px;
@@ -790,23 +790,6 @@ PREDICT_HTML_TEMPLATE = """
                                             <option value="">Please select gender</option>
                                             <option value="1">Male</option>
                                             <option value="0">Female</option>
-                                        </select>
-                                    {% elif (decision_type == 'discharge' and idx == 33) or (decision_type == 'extubation' and idx == 26) %}
-                                        <select class="form-control" id="input_{{ idx }}" name="input_{{ idx }}" required>
-                                            <option value="">Please select GCS Score</option>
-                                            <option value="3">3 - Deep Coma</option>
-                                            <option value="4">4 - Severe Coma</option>
-                                            <option value="5">5 - Severe Coma</option>
-                                            <option value="6">6 - Severe Coma</option>
-                                            <option value="7">7 - Severe Coma</option>
-                                            <option value="8">8 - Severe Coma</option>
-                                            <option value="9">9 - Moderate Impairment</option>
-                                            <option value="10">10 - Moderate Impairment</option>
-                                            <option value="11">11 - Moderate Impairment</option>
-                                            <option value="12">12 - Mild Impairment</option>
-                                            <option value="13">13 - Mild Impairment</option>
-                                            <option value="14">14 - Mild Impairment</option>
-                                            <option value="15">15 - Normal</option>
                                         </select>
                                     {% else %}
                                         {% set config = field_configs[idx] %}
@@ -925,7 +908,7 @@ DECISION_TYPE_HTML_TEMPLATE = """
             background: white;
         }
         .decision-card:hover {
-            border-color: #667eea;
+            border-color: #0891b2;
             transform: translateY(-5px);
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
         }
@@ -956,7 +939,7 @@ DECISION_TYPE_HTML_TEMPLATE = """
             line-height: 1.6;
         }
         .btn-select {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
             border: none;
             padding: 12px 30px;
             font-weight: bold;
@@ -1042,7 +1025,7 @@ RESULTS_HTML_TEMPLATE = """
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
             min-height: 100vh;
             padding: 20px 0;
         }
@@ -1066,17 +1049,9 @@ RESULTS_HTML_TEMPLATE = """
             border-radius: 15px;
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         }
-        .prediction-value.low-risk {
-            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-            color: #155724;
-        }
-        .prediction-value.moderate-risk {
-            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-            color: #856404;
-        }
-        .prediction-value.high-risk {
-            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-            color: #721c24;
+        .prediction-value.cost-estimate {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            color: #01579b;
         }
         .prediction-value.length-stay {
             background: linear-gradient(135deg, #cce7ff 0%, #b3d9ff 100%);
@@ -1084,7 +1059,7 @@ RESULTS_HTML_TEMPLATE = """
         }
         .model-info {
             background: #f8f9fa;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid #0891b2;
             padding: 20px;
             margin: 20px 0;
             border-radius: 5px;
@@ -1116,7 +1091,7 @@ RESULTS_HTML_TEMPLATE = """
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
         .decision-badge {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
             color: white;
             padding: 8px 16px;
             border-radius: 20px;
@@ -1146,10 +1121,11 @@ RESULTS_HTML_TEMPLATE = """
             <p><strong>Selected Model:</strong> Model {{ model_index + 1 }} - {{ model_description }}</p>
         </div>
         
-        <div class="prediction-value {% if 'Low Risk' in risk_level %}low-risk{% elif 'Moderate Risk' in risk_level %}moderate-risk{% elif 'High Risk' in risk_level %}high-risk{% elif 'Expected:' in risk_level %}length-stay{% endif %}">
-            <div class="mb-2" style="font-size: 1.2rem; font-weight: normal;">Prediction Result</div>
+        <div class="prediction-value {% if 'Length of Stay' in risk_level %}length-stay{% else %}cost-estimate{% endif %}">
+            <div class="mb-2" style="font-size: 1.2rem; font-weight: normal;">FQE Prediction Result</div>
             <div>{{ "%.4f"|format(prediction_value) }}</div>
             <div class="mt-2" style="font-size: 1.5rem;">{{ risk_level }}</div>
+            <div class="mt-2" style="font-size: 1.0rem; font-weight: normal; font-style: italic;">{% if 'Cost' in risk_level %}(Lower values indicate better predicted outcomes){% endif %}</div>
         </div>
         
         <div class="interpretation-box">
@@ -1159,31 +1135,35 @@ RESULTS_HTML_TEMPLATE = """
         
         {% if decision_type == 'discharge' %}
         <div class="mt-4">
-            <h6>Risk Assessment Guidelines:</h6>
+            <h6>Clinical Interpretation Guidelines:</h6>
             <ul class="small">
                 {% if model_index == 0 %}
-                <li><strong>Low Risk (< 0.3):</strong> Patient shows good indicators for discharge</li>
-                <li><strong>Moderate Risk (0.3-0.7):</strong> Careful monitoring recommended</li>
-                <li><strong>High Risk (> 0.7):</strong> Consider delaying discharge</li>
+                <li><strong>FQE Cost Interpretation:</strong> This model estimates the expected mortality cost. Lower values generally indicate more favorable predicted outcomes for discharge.</li>
+                <li><strong>Clinical Context:</strong> The numerical value should be interpreted within the broader clinical picture, including patient stability, comorbidities, and social support systems.</li>
+                <li><strong>Decision Authority:</strong> Specific action thresholds and final discharge decisions remain under the purview of the attending physician.</li>
                 {% elif model_index == 1 %}
-                <li><strong>Low Risk (< 0.2):</strong> Low probability of readmission</li>
-                <li><strong>Moderate Risk (0.2-0.5):</strong> Monitor patient post-discharge</li>
-                <li><strong>High Risk (> 0.5):</strong> High probability of readmission</li>
+                <li><strong>FQE Cost Interpretation:</strong> This model estimates the expected readmission cost. Lower values suggest reduced likelihood of ICU readmission.</li>
+                <li><strong>Clinical Context:</strong> Consider this estimate alongside discharge planning, home care arrangements, and patient/family education needs.</li>
+                <li><strong>Decision Authority:</strong> Clinical judgment should guide the interpretation of these values in the context of individual patient circumstances.</li>
                 {% else %}
-                <li>Values represent expected hospital length of stay in days</li>
+                <li><strong>Length of Stay Estimation:</strong> This value represents the expected hospital length of stay following discharge from ICU.</li>
+                <li><strong>Resource Planning:</strong> This information can support hospital bed management and discharge planning processes.</li>
+                <li><strong>Clinical Context:</strong> Actual length of stay may vary based on patient recovery progress and unexpected complications.</li>
                 {% endif %}
             </ul>
         </div>
         {% else %}
         <div class="mt-4">
-            <h6>Risk Assessment Guidelines:</h6>
+            <h6>Clinical Interpretation Guidelines:</h6>
             <ul class="small">
                 {% if model_index == 0 %}
-                <li><strong>Low Risk (< 0.2):</strong> Good candidate for extubation</li>
-                <li><strong>Moderate Risk (0.2-0.5):</strong> Proceed with caution</li>
-                <li><strong>High Risk (> 0.5):</strong> Consider delaying extubation</li>
+                <li><strong>FQE Cost Interpretation:</strong> This model estimates the expected extubation failure cost. Lower values indicate more favorable predicted outcomes for extubation.</li>
+                <li><strong>Clinical Context:</strong> Extubation readiness should be assessed comprehensively, including respiratory parameters, neurological status, and airway protection capability.</li>
+                <li><strong>Decision Authority:</strong> The timing and appropriateness of extubation remain clinical decisions made by qualified healthcare professionals.</li>
                 {% else %}
-                <li>Values represent expected ICU length of stay in days</li>
+                <li><strong>Length of Stay Estimation:</strong> This value represents the expected ICU length of stay.</li>
+                <li><strong>Resource Planning:</strong> This information may assist in ICU capacity planning and patient flow management.</li>
+                <li><strong>Clinical Context:</strong> Actual ICU stay duration depends on patient recovery trajectory and potential complications.</li>
                 {% endif %}
             </ul>
         </div>
@@ -1245,7 +1225,7 @@ THRESHOLD_SELECTION_HTML_TEMPLATE = """
             background: white;
         }
         .threshold-card:hover {
-            border-color: #667eea;
+            border-color: #0891b2;
             transform: translateY(-3px);
             box-shadow: 0 8px 20px rgba(0,0,0,0.1);
         }
@@ -1277,7 +1257,7 @@ THRESHOLD_SELECTION_HTML_TEMPLATE = """
             font-size: 0.95rem;
         }
         .decision-type-badge {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
             color: white;
             padding: 8px 16px;
             border-radius: 20px;
@@ -1446,7 +1426,7 @@ def decline():
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
         <style>
             body {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
                 min-height: 100vh;
                 display: flex;
                 align-items: center;
@@ -1478,7 +1458,7 @@ def decline():
                 margin-bottom: 30px;
             }
             .btn-home {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
                 border: none;
                 padding: 12px 30px;
                 font-size: 1.1rem;
@@ -1637,21 +1617,21 @@ def predict(decision_type, threshold_set, model_index):
             # Add interpretation context
             if decision_type == 'discharge':
                 if model_index == 0:  # OBJ - Mortality Risk
-                    interpretation = "Lower values indicate lower mortality risk following discharge."
-                    risk_level = "Low Risk" if response < 0.3 else "Moderate Risk" if response < 0.7 else "High Risk"
+                    interpretation = "This FQE model estimates the expected mortality cost associated with the discharge decision. Lower values indicate better predicted outcomes. The clinical significance and appropriate action thresholds should be determined by the attending physician based on the patient's overall condition and clinical context."
+                    risk_level = "Estimated Mortality Cost"
                 elif model_index == 1:  # CON_RR - Readmission Risk
-                    interpretation = "Lower values indicate lower risk of readmission to ICU."
-                    risk_level = "Low Risk" if response < 0.2 else "Moderate Risk" if response < 0.5 else "High Risk"
+                    interpretation = "This FQE model estimates the expected readmission cost associated with the discharge decision. Lower values suggest lower likelihood of ICU readmission. Clinical interpretation and decision-making should be performed by qualified healthcare professionals considering all relevant patient factors."
+                    risk_level = "Estimated Readmission Cost"
                 elif model_index == 2:  # CON_LOS - Length-of-Stay
-                    interpretation = "Values represent expected length of stay in hospital (days)."
-                    risk_level = f"Expected: {response:.1f} days"
+                    interpretation = f"This FQE model estimates the expected hospital length of stay following discharge. The predicted value is approximately {response:.1f} days. This estimation should be used as supportive information alongside clinical judgment and hospital resource planning considerations."
+                    risk_level = "Estimated Length of Stay"
             else:  # extubation
                 if model_index == 0:  # OBJ - Extubation Failure Risk
-                    interpretation = "Lower values indicate lower risk of extubation failure."
-                    risk_level = "Low Risk" if response < 0.2 else "Moderate Risk" if response < 0.5 else "High Risk"
+                    interpretation = "This FQE model estimates the expected extubation failure cost. Lower values indicate better predicted outcomes for successful extubation. The final decision on extubation timing should be made by the clinical team based on comprehensive assessment of respiratory function and patient readiness."
+                    risk_level = "Estimated Extubation Failure Cost"
                 elif model_index == 1:  # CON - Length-of-Stay
-                    interpretation = "Values represent expected length of stay in ICU (days)."
-                    risk_level = f"Expected: {response:.1f} days"
+                    interpretation = f"This FQE model estimates the expected ICU length of stay. The predicted value is approximately {response:.1f} days. This information should be interpreted by clinicians in conjunction with patient condition and ICU resource management needs."
+                    risk_level = "Estimated ICU Length of Stay"
             
             print(f"DEBUG: Model description: {model_desc}")
             print(f"DEBUG: Risk level: {risk_level}")

@@ -86,8 +86,8 @@ ocrl_training.train(agent_fqi = fqi_agent,
 
 ### Offline Constrained Reinforcement Learning (OCRL) Algorithms
 
-- **Fitted Q-Evaluation (FQE)**: Policy evaluation for offline data
-- **Fitted Q-Iteration (FQI)**: Policy optimization 
+- **Fitted Q-Evaluation (FQE)**: Policy evaluation method for offline data
+- **Fitted Q-Iteration (FQI)**: Value-based offline RL algorithm 
 - **Replay Buffer**: Efficient data management for training
 - **Custom RL Configurator**: Flexible configuration for different clinical scenarios
 

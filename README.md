@@ -211,12 +211,15 @@ These two tables provide the essential MDP components required for model-free of
 For datasets that contain medical terminology in different languages (e.g., German in the SICdb), we provide an interface for calling large language model tools to perform translation and terminology lookup. **The large language model tools are used exclusively for translation purposes and are designed to maintain strict data privacy and confidentiality.**
 
 #### Data Availability
-The original medical research datasets (MIMIC-IV and SICdb) are not included in this repository due to privacy and licensing requirements. However, they can be obtained from authorized sources:
+The original medical research datasets (MIMIC-IV, SICdb and NWICU) **are not included in this repository due to privacy and licensing requirements**. However, they can be obtained from authorized sources:
 
 - **MIMIC-IV**: Available through [PhysioNet](https://physionet.org/content/mimiciv/3.1/) following proper data use agreements.
 - **SICdb**: Available through [PhysioNet](https://physionet.org/content/sicdb/1.0.8/) following proper data use agreements.
+- **NWICU**: Available through [PhysioNet](https://physionet.org/content/nwicu-northwestern-icu/0.1.0/) following proper data use agreements.
 
 Please ensure you have the appropriate permissions and follow all data use agreements when accessing these datasets.
+
+**Note**: Note that to demonstrate our algorithm's performance, we have included preprocessed MIMIC-IV data in the `processed_data_discharge.zip` under `Experiment Notebook`. This data, which we used in our discharge decision-making task, is provided solely for testing purposes to verify that the algorithm runs correctly (after extraction).
 
 
 ### OCRL Algorithm Module
@@ -356,12 +359,11 @@ The actual experimental results and comprehensive performance evaluation of our 
 For detailed usage examples and practical implementations, please refer to the **`Experiment Notebook/`** directory, which contains comprehensive Jupyter notebooks demonstrating:
 - Data preprocessing and loading
 - Model configuration and training
-- Policy evaluation and optimization
 - Clinical decision-making applications
    - Case 1: ICU Extubation decision-making
    - Case 2: ICU Discharge decision-making
 
-**Note**: The notebooks use processed demonstration data specifically prepared for illustrating the algorithm workflow and usage. These demonstration datasets are included to help users understand the implementation process without requiring access to the full clinical datasets.
+**Note**: Processed data for the ICU extubation decision-making task are not currently provided, as the corresponding manuscript is undergoing major revision. However, the overall algorithmic framework and usage procedure are essentially identical to those for discharge decision-making. Users can refer to `Case_ICU_Discharge_Decision_Making.ipynb` for implementation guidance. The notebooks use processed demonstration data specifically prepared for illustrating the algorithm workflow and usage. These demonstration datasets are included to help users understand the implementation process without requiring access to the full clinical datasets.
 
 This framework enables researchers and clinicians to develop, validate, and deploy offline constrained reinforcement learning systems for critical care environments.
 
@@ -369,6 +371,7 @@ This framework enables researchers and clinicians to develop, validate, and depl
 
 The `CDM-Software/` directory contains the clinical decision support software implementation, providing an interactive web-based interface for healthcare professionals to utilize the trained OCRL models (the trained FQE models) in real clinical settings.
 
+---
 #### Interactive Decision Support System (`interactive_support.py`)
 
 The core software module that implements the necessary Fitted-Q-Evaluation (FQE) model inside our OCRL framework optimized for real-time clinical decision support.
@@ -377,10 +380,12 @@ The core software module that implements the necessary Fitted-Q-Evaluation (FQE)
 
 A `Flask`-based web application (now only for demonstration) that provides an intuitive interface for clinical decision-making process.
 
+**Users can simply execute `web_application_demo.py`  in the current directory to gain a comprehensive understanding of our web application's interface and functionality.**
+
 **Application Features:**
 
 1. **Model Selection Interface**:
-   - **Model 1**: FQE Estimated Objective Cost (primary outcome evaluation)
+   - **Model 1**: FQE Estimated Objective Cost (e.g., mortality risk)
    - **Model 2**: FQE Estimated Constraint Cost 1 (e.g., readmission risk)
    - **Model 3**: FQE Estimated Constraint Cost 2 (e.g., ICU length-of-stay)
 
@@ -399,7 +404,11 @@ A `Flask`-based web application (now only for demonstration) that provides an in
    - `Scikit-learn` preprocessing pipeline
    - Secure model loading and prediction
 
-#### Testing and Validation Tools
+---
+
+#### Testing Tools & Deployment
+
+**Note**: This section is intended to support future deployment of the software in clinical settings and will need to be expanded and revised accordingly.
 
 **Environment Testing (`test_environment.py`)**:
 - **Purpose**: Validates system dependencies and file availability
@@ -419,8 +428,6 @@ A `Flask`-based web application (now only for demonstration) that provides an in
 - **Usage**:
   - Windows: `run_app.bat`
   - Linux/Mac: `chmod +x run_app.sh && ./run_app.sh`
-
-#### Deployment and Configuration
 
 **Deployment Guide (`DEPLOYMENT_GUIDE.md`)**:
 - **System Requirements**: Memory, storage, and network specifications
@@ -451,8 +458,6 @@ Parameters                                                                      
 - **ICU Extubation Decision Support**: Evaluation of mechanical ventilation weaning for patients in ICU
 
 This software module bridges the gap between research-grade OCRL algorithms and practical clinical deployment, providing healthcare professionals with AI-assisted decision support tools that maintain clinical safety standards while leveraging advanced Offline RL techniques.
-
-For detailed deployment instructions and clinical usage guidelines, refer to the `CDM-Software/DEPLOYMENT_GUIDE.md` documentation.
 
 ## Docker Deployment Module
 

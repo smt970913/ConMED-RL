@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "ConMedRL"
 dynamic = ["version"]
 description = "An Offline Constrained Reinforcement Learning Toolkit for Medical Decision Making"
-readme = "README.md"
+readme = "PYPI_README.md"
 license = {file = "LICENSE"}
 authors = [
     {name = "Maotong Sun", email = "maotong.sun@tum.de"},

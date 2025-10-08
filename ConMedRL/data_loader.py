@@ -9,7 +9,7 @@ import torch
 script_dir = os.path.dirname(__file__)
 sys.path.append(script_dir)
 
-import concarerl
+import conmedrl
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -35,7 +35,7 @@ class TrainDataLoader:
                 If None, uses the action as the done condition.
             num_constraint (int): Number of constraint costs to extract
         """
-        self.train_memory = concarerl.ReplayBuffer(self.cfg.memory_capacity)
+        self.train_memory = conmedrl.ReplayBuffer(self.cfg.memory_capacity)
 
         for i in range(len(self.outcome_df)):
             state = self.state_var_df.values[i]
@@ -103,7 +103,7 @@ class ValTestDataLoader:
                 If None, uses the action as the done condition.
             num_constraint (int): Number of constraint costs to extract
         """
-        self.buffer_memory = concarerl.ReplayBuffer(self.cfg.memory_capacity)
+        self.buffer_memory = conmedrl.ReplayBuffer(self.cfg.memory_capacity)
 
         for i in range(len(self.outcome_df_select)):
             state = self.state_var_df_select.values[i]

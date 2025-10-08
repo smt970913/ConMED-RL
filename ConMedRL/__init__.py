@@ -1,5 +1,5 @@
 """
-ConCare-RL: An Offline Constrained Reinforcement Learning Toolkit for Critical Care Decision Making
+ConMedRL: An Offline Constrained Reinforcement Learning Toolkit for Critical Care Decision Making
 
 This package provides the core OCRL framework for critical care decision support,
 including policy evaluation, policy optimization, and data handling utilities.
@@ -7,7 +7,7 @@ including policy evaluation, policy optimization, and data handling utilities.
 Authors: Maotong Sun (maotong.sun@tum.de), Jingui Xie (jingui.xie@tum.de)
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.3"
 __author__ = "Maotong Sun, Jingui Xie"
 __email__ = "maotong.sun@tum.de, jingui.xie@tum.de"
 

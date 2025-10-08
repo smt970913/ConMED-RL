@@ -54,7 +54,6 @@ ICU-Decision Making-OCRL/
 ├── image/                                   # Documentation images
 │
 ├── README.md                                # Project documentation
-├── LIBRARY_USAGE.md                         # Python library usage guide
 ├── requirements.txt                         # Python dependencies
 ├── setup.py                                 # Package setup file (setuptools)
 ├── pyproject.toml                           # Modern Python package configuration
@@ -79,14 +78,10 @@ For the core ConMED-RL framework:
 
 ```bash
 # Install from PyPI
-pip install ConMedRL
+pip install conmedrl
 
 # Or install directly from GitHub
 pip install git+https://github.com/smt970913/ConMED-RL.git
-
-# Install with optional dependencies
-pip install ConMedRL[models,viz]  # For visualization and model utilities
-pip install ConMedRL[dev]         # For development tools
 ```
 
 **Verify installation:**
@@ -100,8 +95,8 @@ For full repository access including web application and experiment notebooks:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-username/ICU-Decision-Making-OCRL.git
-   cd ICU-Decision-Making-OCRL
+   git clone https://github.com/smt970913/ConMED-RL.git
+   cd ConMED-RL
    ```
 
 2. **Create a virtual environment:**

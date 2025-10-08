@@ -6,9 +6,14 @@ Setup script for ConMED-RL: An OCRL-Based Toolkit for Medical Decision Support
 from setuptools import setup, find_packages
 import os
 
-# Read the README file
-with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read()
+# Read the PyPI-specific README file
+try:
+    with open("PYPI_README.md", "r", encoding="utf-8") as fh:
+        long_description = fh.read()
+except FileNotFoundError:
+    # Fallback to regular README if PYPI_README doesn't exist
+    with open("README.md", "r", encoding="utf-8") as fh:
+        long_description = fh.read()
 
 # Read the requirements file
 try:

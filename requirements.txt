@@ -1,4 +1,4 @@
-flask==2.2.2
+flask==2.2.2 # Required for testing the web-application demo
 scikit-learn==1.2.1
 torch
 numpy==1.23.5

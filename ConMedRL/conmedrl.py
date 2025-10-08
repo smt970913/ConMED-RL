@@ -896,14 +896,17 @@ class RLConfigurator:
             Optional[RLConfig_custom]: Configuration object if successful, None if error occurred
         """
         print("Configuration Options:", flush = True)
-        print("1. Load from JSON file (config.json)", flush = True)
-        print("2. Manual input", flush = True)
+        print("1. Load from JSON file (self-defined config_discrete.json)", flush = True)
+        print("2. Load from JSON file (self-defined config_continuous.json)", flush = True)
+        print("3. Manual input", flush = True)
         
         choice = input("Choose configuration method (1 or 2): ").strip()
         
         if choice == '1':
-            return self.load_config_from_json('config.json')
+            return self.load_config_from_json('config_discrete.json')
         elif choice == '2':
+            return self.load_config_from_json('config_continuous.json')
+        elif choice == '3':
             return self.input_rl_config()
         else:
             print("Invalid choice. Please enter 1 or 2.")

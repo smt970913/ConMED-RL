@@ -80,10 +80,6 @@ viz = [
     "plotly>=5.0.0",
 ]
 
-[project.scripts]
-conmedrl-train = "ConMedRL.conmedrl:main"
-conmedrl-eval = "ConMedRL.conmedrl:evaluate"
-
 [tool.setuptools]
 packages = ["ConMedRL", "Data"]
 include-package-data = true

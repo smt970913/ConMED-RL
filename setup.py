@@ -98,10 +98,4 @@ setup(
         "machine learning",
         "artificial intelligence"
     ],
-    entry_points={
-        "console_scripts": [
-            "conmedrl-train=ConMedRL.conmedrl:main",
-            "conmedrl-eval=ConMedRL.conmedrl:evaluate",
-        ],
-    },
 )

@@ -12,7 +12,7 @@ __author__ = "Maotong Sun, Jingui Xie"
 __email__ = "maotong.sun@tum.de, jingui.xie@tum.de"
 
 # Core OCRL components
-from .concarerl import (
+from .conmedrl import (
     FCN_fqe,
     FCN_fqi, 
     ReplayBuffer,
@@ -28,9 +28,6 @@ from .data_loader import (
     TrainDataLoader,
     ValTestDataLoader
 )
-
-# Done condition functions
-from .done_condition_function_examples import *
 
 __all__ = [
     # Core OCRL classes

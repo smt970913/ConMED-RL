@@ -30,20 +30,6 @@ ICU-Decision Making-OCRL/
 │   ├── conmedrl_continuous.py               # Main OCRL implementation - continuous action space
 │   ├── data_loader.py                       # DataLoader for sampling transitions
 │
-├── Docker-Deployment/                       # Docker deployment configurations
-│   ├── README.md                            # Docker deployment guide
-│   ├── Dockerfile                           # Optimized Docker image definition
-│   ├── docker-compose.yml                   # Development environment setup
-│   ├── docker-compose.prod.yml              # Production environment with monitoring
-│   ├── nginx.conf                           # Nginx reverse proxy configuration
-│   ├── .dockerignore                        # Docker ignore patterns
-│   ├── scripts/
-│   │   ├── build.sh                         # Build script (Linux/Mac)
-│   │   ├── build.bat                        # Build script (Windows)
-│   │   └── cleanup.sh                       # Docker cleanup script
-│   └── env/
-│       └── env.example                      # Environment variables template
-│
 ├── Data/                                    # Datasets
 │   ├── mimic_iv_icu_extubation/
 │   │   └── data_preprocess.py               # MIMIC-IV extubation data preprocessing
@@ -86,9 +72,31 @@ ConMED-RL supports multiple installation methods to accommodate different use ca
 
 - **Python 3.10.14** (recommended, as specified in `runtime.txt`)
 - **Git** for cloning the repository
-- **Docker** (optional, for containerized deployment)
 
-### Method 1: Local Installation (Recommended for Development)
+### Method 1: PyPI Installation (Recommended)
+
+For the core ConMED-RL framework:
+
+```bash
+# Install from PyPI
+pip install ConMedRL
+
+# Or install directly from GitHub
+pip install git+https://github.com/smt970913/ConMED-RL.git
+
+# Install with optional dependencies
+pip install ConMedRL[models,viz]  # For visualization and model utilities
+pip install ConMedRL[dev]         # For development tools
+```
+
+**Verify installation:**
+```bash
+python -c "import ConMedRL; print('ConMED-RL version:', ConMedRL.__version__)"
+```
+
+### Method 2: Local Installation (Recommended for Development and Web Application)
+
+For full repository access including web application and experiment notebooks:
 
 1. **Clone the repository:**
    ```bash
@@ -122,69 +130,13 @@ ConMED-RL supports multiple installation methods to accommodate different use ca
 
 5. **Verify installation:**
    ```bash
-   python -c "import ConMEDRL.ConMedRL; print('ConMED-RL installed successfully!')"
+   python -c "import ConMedRL; print('ConMED-RL version:', ConMedRL.__version__)"
    ```
-
-### Method 2: Docker Installation (Recommended for Production)
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/your-username/ICU-Decision-Making-OCRL.git
-   cd ICU-Decision-Making-OCRL
-   ```
-
-2. **Quick start with automated scripts:**
-   ```bash
-   # On Windows:
-   cd Docker-Deployment\scripts
-   build.bat
-   
-   # On Linux/Mac:
-   cd Docker-Deployment/scripts
-   chmod +x build.sh
-   ./build.sh
-   ```
-
-3. **Manual Docker commands:**
-   ```bash
-   # Navigate to Docker deployment directory
-   cd Docker-Deployment
-   
-   # Development environment
-   docker-compose up --build -d
-   
-   # Production environment
-   docker-compose -f docker-compose.prod.yml up --build -d
-   
-   # With monitoring (Prometheus + Grafana)
-   docker-compose -f docker-compose.prod.yml --profile monitoring up -d
-   ```
-
-4. **Access the application:**
-   - **Development:** http://localhost:5000
-   - **Production:** http://localhost (port 80)
-   - **Monitoring:** http://localhost:3000 (Grafana), http://localhost:9090 (Prometheus)
-
-### Method 3: PyPI Installation (Recommended for Core Algorithm Module)
-
-For the core ConMED-RL framework without the web application:
-
-```bash
-# Install from PyPI (when published)
-pip install ConMEDRL
-
-# Or install directly from GitHub
-pip install git+https://github.com/your-username/ICU-Decision-Making-OCRL.git
-
-# Install with optional dependencies
-pip install ConMEDRL[models,viz]  # For visualization and model utilities
-pip install ConMEDRL[dev]         # For development tools
-```
 
 ### Quick Start for Different Use Cases
 
 #### For Research and Experimentation:
-1. Follow **Method 1** (Local Installation)
+1. Follow **Method 2** (Local Installation)
 2. Launch Jupyter notebooks:
    ```bash
    jupyter notebook "Experiment Notebook/"
@@ -192,19 +144,23 @@ pip install ConMEDRL[dev]         # For development tools
 3. Start with example notebooks for MIMIC-IV datasets
 
 #### For Clinical Decision Support:
-1. Follow **Method 2** (Docker Installation)  
-2. Use the web application:
-   - Development: `http://localhost:5000`
-   - Production: `http://localhost` (port 80)
-3. Refer to `Docker-Deployment/README.md` for detailed deployment instructions
+1. Follow **Method 2** (Local Installation)  
+2. Run the web application:
+   ```bash
+   cd CDM-Software
+   python web_application_demo.py
+   ```
+3. Access the application at `http://localhost:5000`
+4. Refer to `CDM-Software/DEPLOYMENT_GUIDE.md` for detailed deployment instructions
 
 #### For Custom Development:
-1. Follow **Method 1** (Local Installation)
+1. Follow **Method 1** (PyPI Installation) for quick setup
 2. Import ConMED-RL components:
    ```python
-   from ConMEDRL.ConMedRL import conmedrl, conmedrl_continuous
-   from ConMEDRL.ConMedRL import data_loader
+   from ConMedRL import FQE, FQI, TrainDataLoader, ValTestDataLoader
+   from Data import mimic_iv_icu_discharge, mimic_iv_icu_extubation
    ```
+3. For accessing source code and examples, use **Method 2** (Local Installation)
 
 ### Dependencies Overview
 
@@ -231,12 +187,6 @@ The toolkit requires the following main dependencies:
 2. **Memory issues with large datasets:**
    - Ensure sufficient RAM (minimum 8GB recommended)
    - Use data batching for large datasets
-
-3. **Port conflicts (Docker):**
-```bash
-# Change port mapping in docker-compose.yml or use:
-docker-compose up -d --scale conmed-rl-app=1 -p 8080:5000
-   ```
 
 **Getting Help:**
 - Check the `CDM-Software/DEPLOYMENT_GUIDE.md` for detailed deployment instructions
@@ -386,6 +336,28 @@ The `ConMEDRL/ConMEDrl.py` module implements the complete offline constrained re
 **Utility Functions:**
 - **`save_ocrl_models_and_data()`**: Comprehensive model and data saving functionality.
 
+#### Important Notes on Data Access and Algorithm Validation
+
+**Data Access Requirements:**
+
+Access to clinical datasets (MIMIC-IV, SICdb, etc.) requires users to independently obtain proper ethical approval and data use agreements from the respective data providers. **Users are responsible for:**
+- Completing required ethics training and certifications
+- Obtaining institutional approval for data access
+- Adhering to all data use agreements and privacy regulations
+- Following proper data handling and security protocols
+
+Please refer to the **Dataset Module** section above for links to authorized data sources and detailed information on data availability.
+
+**Algorithm Performance and Validation:**
+
+The actual experimental results and comprehensive performance evaluation of our OCRL algorithm module on real clinical datasets are documented in our **accepted paper published in *IISE Transactions on Healthcare Systems Engineering*** (available in the `Previous_Research/` folder). This publication provides:
+- Rigorous validation on MIMIC-IV ICU discharge decision-making dataset
+- Comprehensive benchmarking against baseline methods
+- Statistical analysis of constraint satisfaction and policy performance
+- Clinical significance and practical implications
+
+**Demonstration and Usage:**
+
 For detailed usage examples and practical implementations, please refer to the **`Experiment Notebook/`** directory, which contains comprehensive Jupyter notebooks demonstrating:
 - Data preprocessing and loading
 - Model configuration and training
@@ -393,6 +365,8 @@ For detailed usage examples and practical implementations, please refer to the *
 - Clinical decision-making applications
    - Case 1: ICU Extubation decision-making
    - Case 2: ICU Discharge decision-making
+
+**Note**: The notebooks use processed demonstration data specifically prepared for illustrating the algorithm workflow and usage. These demonstration datasets are included to help users understand the implementation process without requiring access to the full clinical datasets.
 
 This framework enables researchers and clinicians to develop, validate, and deploy offline constrained reinforcement learning systems for critical care environments.
 
@@ -406,7 +380,7 @@ The core software module that implements the necessary Fitted-Q-Evaluation (FQE)
 
 #### Web Application (`web_application_demo.py`)
 
-A `Flask`-based web application that provides an intuitive interface for clinical decision-making.
+A `Flask`-based web application (now only for demonstration) that provides an intuitive interface for clinical decision-making process.
 
 **Application Features:**
 
@@ -447,7 +421,6 @@ A `Flask`-based web application that provides an intuitive interface for clinica
   - Automatic dependency checking and validation
   - Virtual environment activation support
   - Error handling and user guidance
-  - Docker deployment recommendations
 - **Usage**:
   - Windows: `run_app.bat`
   - Linux/Mac: `chmod +x run_app.sh && ./run_app.sh`
@@ -457,7 +430,6 @@ A `Flask`-based web application that provides an intuitive interface for clinica
 **Deployment Guide (`DEPLOYMENT_GUIDE.md`)**:
 - **System Requirements**: Memory, storage, and network specifications
 - **Deployment Methods**:
-  - Docker containerization (recommended)
   - Cloud server deployment (AWS EC2, Alibaba Cloud ECS)
   - Local server installation
 - **Security Configuration**: HTTPS, firewall, environment variables
@@ -465,10 +437,8 @@ A `Flask`-based web application that provides an intuitive interface for clinica
 - **Clinical Usage Workflow**: Step-by-step physician user guide
 
 **Key Deployment Features**:
-- One-click Docker deployment
 - Production-ready configuration with Gunicorn
 - SSL/HTTPS support for secure clinical data handling
-- Load balancing and performance optimization
 - Comprehensive troubleshooting guide
 
 #### Clinical Integration Workflow
@@ -488,3 +458,26 @@ Parameters                                                                      
 This software module bridges the gap between research-grade OCRL algorithms and practical clinical deployment, providing healthcare professionals with AI-assisted decision support tools that maintain clinical safety standards while leveraging advanced Offline RL techniques.
 
 For detailed deployment instructions and clinical usage guidelines, refer to the `CDM-Software/DEPLOYMENT_GUIDE.md` documentation.
+
+## Docker Deployment Module
+
+**Status: Under Development**
+
+The Docker deployment module (`Docker-Deployment/`) is currently under active development and testing. This module aims to provide containerized deployment solutions for the ConMED-RL toolkit, including:
+
+- **Planned Features**:
+  - Dockerized application with optimized image configuration
+  - Multi-environment support (development, production, research)
+  - Nginx reverse proxy integration
+  - Monitoring solutions (Prometheus + Grafana)
+  - Automated build and deployment scripts
+  - Production-ready configurations with security hardening
+
+- **Current Status**:
+  - Docker configurations are available in the repository
+  - Comprehensive testing and validation are in progress
+  - Documentation is being finalized
+
+**Note**: Until the Docker deployment module is fully tested and validated, we recommend using **Method 2 (Local Installation)** for development and production deployments. For quick setup of the core algorithm module, **Method 1 (PyPI Installation)** is recommended. Please refer to the Installation Guideline section above for detailed instructions.
+
+For updates on the Docker deployment module, please check the repository or contact the maintainers.

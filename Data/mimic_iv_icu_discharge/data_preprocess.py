@@ -681,7 +681,7 @@ class PatientDataProcess:
         icu_rd_list = []
         disc_fail_list = []
 
-        for i in tqdm(range(len(icu_rd_list))):
+        for i in range(len(icu_rd_list)):
             sub_data = ICU_patient_data_rd[ICU_patient_data_rd['subject_id'] == icu_rd_list[i]]
             for j in range(1, len(sub_data)):
                 if sub_data['stay_id'].iloc[j] != sub_data['stay_id'].iloc[j-1]:
@@ -792,7 +792,7 @@ class GenerateDataSet:
         return sub_data
 
     ### physio_table needs to be constructed by the user manually, and it could include the columns do not need to go through the chart_events_data
-    def dataset_generation(self, physio_table, readmission_observation_days = 30):
+    def dataset_generation(self, physio_table, readmission_observation_days = 30, death_observation_days = 30):
         icu_stay_list = pd.unique(self.icu_patient_data['stay_id'])
         for i in range(len(icu_stay_list)):
             
@@ -811,9 +811,9 @@ class GenerateDataSet:
                 physio_table['los'].append(self.icu_patient_data['los'].iloc[i])        
                 physio_table['discharge_fail'].append(self.icu_patient_data[f'discharge_fail_{readmission_observation_days}_day'].iloc[i])
                 physio_table['readmission'].append(self.icu_patient_data[f'readmission_{readmission_observation_days}_day'].iloc[i])
-                physio_table['readmission_count'].append(self.icu_patient_data['readmission_count_30_day'].iloc[i])
+                physio_table['readmission_count'].append(self.icu_patient_data[f'readmission_count_{readmission_observation_days}_day'].iloc[i])
                 physio_table['death_in_ICU'].append(self.icu_patient_data['death_in_ICU'].iloc[i])
-                physio_table['death_out_ICU'].append(self.icu_patient_data[f'death_out_ICU_{readmission_observation_days}_day'].iloc[i])
+                physio_table['death_out_ICU'].append(self.icu_patient_data[f'death_out_ICU_{death_observation_days}_day'].iloc[i])
                 physio_table['age'].append(self.icu_patient_data['anchor_age'].iloc[i])
                 physio_table['gender'].append(self.icu_patient_data['gender'].iloc[i])
                 physio_table['race'].append(self.icu_patient_data['race'].iloc[i])
@@ -1163,7 +1163,7 @@ class StateSpaceBuilder:
         self.generated_dataset = self.generated_dataset.drop_duplicates(subset = subset, keep = 'first')
         
         m = self.generated_dataset[self.generated_dataset['discharge_action'] == 1]
-        duplicates = m[m.duplicated(subset=['stay_id'])]
+        duplicates = m[m.duplicated(subset = ['stay_id'])]
         if len(duplicates) > 0:
             print(f"Attention!!! Found {len(duplicates)} duplicate rows in the dataset! Please check the dataset manually.")
             self.generated_dataset = self.generated_dataset.drop(duplicates.index)
@@ -1172,7 +1172,7 @@ class StateSpaceBuilder:
         
         self.generated_dataset = self.generated_dataset.reset_index(drop = True)
 
-    def columns_manipulation(self):
+    def columns_manipulation(self, drop_old_columns = []):
         # initialize RR and TV as NaN
         self.generated_dataset['RR'] = np.nan
         self.generated_dataset['TV'] = np.nan
@@ -1195,18 +1195,20 @@ class StateSpaceBuilder:
         self.generated_dataset.loc[mask_observed_tv & ~mask_spont_rr, 'TV'] = self.generated_dataset.loc[mask_observed_tv & ~mask_spont_rr, 'Tidal Volume (spontaneous)']
         self.generated_dataset.loc[mask_observed_tv & ~mask_spont_rr, 'RR'] = self.generated_dataset.loc[mask_observed_tv & ~mask_spont_rr, 'Respiratory Rate (spontaneous)']
 
-        self.generated_dataset = self.generated_dataset.drop(columns = ['Respiratory Rate', 'Respiratory Rate (spontaneous)', 'Respiratory Rate (Set)', 'Respiratory Rate (Total)', 
-                                                                        'Tidal Volume (spontaneous)', 'Tidal Volume (set)', 'Tidal Volume (observed)']).copy()
+        self.generated_dataset = self.generated_dataset.drop(columns = drop_old_columns).copy()
         
     ### Denote the decision epoch in the dataset
     def denote_decision_epoch(self):
         self.generated_dataset['epoch'] = self.generated_dataset.groupby(['stay_id', 'readmission_count']).cumcount() + 1
+
+    def denote_qsofa(self):
+        self.generated_dataset['qsofa'] = self.generated_dataset.apply(self.compute_qsofa, axis = 1)
     
-    def icu_discharge_data_selection(self, los_threshold = 15.0):
+    def icu_discharge_data_selection(self, rd_count_threshold = 6, los_threshold = 15.0):
         self.generated_dataset = self.generated_dataset[~self.generated_dataset['subject_id'].isin(pd.unique(self.generated_dataset[self.generated_dataset['los'] > los_threshold]['subject_id']))].copy()
         self.generated_dataset = self.generated_dataset.reset_index(drop = True)
 
-        drop_patient_list = self.generated_dataset.loc[self.generated_dataset['readmission_count'] >= 6, 'subject_id'].tolist()
+        drop_patient_list = self.generated_dataset.loc[self.generated_dataset['readmission_count'] >= rd_count_threshold, 'subject_id'].tolist()
         self.generated_dataset = self.generated_dataset[~self.generated_dataset['subject_id'].isin(drop_patient_list)].copy()
         self.generated_dataset = self.generated_dataset.reset_index(drop = True)
 
@@ -1215,8 +1217,6 @@ class StateSpaceBuilder:
         self.generated_dataset.loc[condition_1, 'id_delete'] = 1.0
         self.generated_dataset = self.generated_dataset[self.generated_dataset['id_delete'] != 1].copy()
         self.generated_dataset = self.generated_dataset.reset_index(drop = True)
-
-        self.generated_dataset['qsofa'] = self.generated_dataset.apply(self.compute_qsofa, axis = 1)
 
     def table_split(self, var_outcome = [], var_physio = []):
         self.rl_cont_state_table = self.generated_dataset[var_physio].copy()
@@ -1334,7 +1334,7 @@ class StateSpaceBuilder:
         if row['Blood Pressure Systolic'] <= 100:
             score += 1
         
-        if row['GCS score'] < 15:
+        if row['GCS Score'] < 15:
             score += 1
     
         return score

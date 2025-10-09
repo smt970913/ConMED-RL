@@ -573,7 +573,7 @@ class ReplayBuffer:
 
 class FQE:
     """
-    Fitted Q Evaluation (FQE) for policy evaluation in offline constrained reinforcement learning.
+    Fitted Q Evaluation (FQE) for policy evaluation in offline RL/offline constrained RL.
     
     FQE estimates the Q-values of a given policy using offline data without policy interaction.
     It can evaluate both objective costs and constraint costs.
@@ -721,7 +721,7 @@ class FQE:
 
 class Critic:
     """
-    Critic for constrained policy optimization in offline constrained reinforcement learning.
+    Critic for policy evaluation in this framework.
     
     Critic learns the Q-value function of the state-action pairs.
     It handles both objective costs and constraint costs through Lagrangian methods.

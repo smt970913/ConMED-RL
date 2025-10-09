@@ -419,7 +419,7 @@ class ReplayBuffer:
 
 class FQE:
     """
-    Fitted Q Evaluation (FQE) for policy evaluation in offline constrained reinforcement learning.
+    Fitted Q Evaluation (FQE) for policy evaluation in offline RL/offline constrained RL.
     
     FQE estimates the Q-values of a given policy using offline data without policy interaction.
     It can evaluate both objective costs and constraint costs.
@@ -565,7 +565,8 @@ class FQE:
 
 class FQI:
     """
-    Fitted Q Iteration (FQI) for constrained policy optimization in offline constrained reinforcement learning.
+    Fitted Q Iteration (FQI) for policy optimization in offline RL/offline constrained RL.
+    It is a classical offline RL algorithm.
     
     FQI learns an optimal policy by iteratively updating Q-values using offline data.
     It handles both objective costs and constraint costs through Lagrangian methods.

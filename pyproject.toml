@@ -41,17 +41,32 @@ keywords = [
     "artificial intelligence"
 ]
 dependencies = [
+    # Core dependencies
     "flask==2.2.2",
     "scikit-learn==1.2.1", 
-    "torch",
+    "torch>=1.8.0",
     "numpy==1.23.5",
-    "tqdm==4.64.1",
-    "pathlib==1.0.1",
     "pandas==1.5.3",
+    "tqdm==4.64.1",
+    # Web server and task queue
     "celery==5.3.6",
     "gunicorn==20.1.0",
+    # Image processing
     "pillow==9.4.0",
-    "requests==2.31.0",  # Required for Claude API calls via HTTP (no need for anthropic library)
+    # HTTP requests
+    "requests==2.31.0",
+    # Data processing (for large-scale data preprocessing)
+    "dask[complete]>=2023.1.0",
+    "threadpoolctl>=3.1.0",
+    "joblib>=1.2.0",
+    # Jupyter ecosystem
+    "jupyter==1.0.0",
+    "jupyterlab==4.0.5",
+    "notebook==7.0.2",
+    # Visualization
+    "matplotlib==3.7.1",
+    "seaborn==0.12.2",
+    "plotly==5.17.0",
 ]
 requires-python = ">=3.8"
 

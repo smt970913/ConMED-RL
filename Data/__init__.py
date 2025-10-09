@@ -8,7 +8,7 @@ This package contains data preprocessing scripts for different datasets:
 - SICdb_extubation: SICdb extubation decision data preprocessing
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.0" # only for reference
 
 # Import data preprocessing modules
 from . import mimic_iv_icu_discharge

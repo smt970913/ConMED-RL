@@ -7,7 +7,7 @@ including policy evaluation, policy optimization, and data handling utilities.
 Authors: Maotong Sun (maotong.sun@tum.de), Jingui Xie (jingui.xie@tum.de)
 """
 
-__version__ = "1.0.5"
+__version__ = "1.0.6"
 __author__ = "Maotong Sun, Jingui Xie"
 __email__ = "maotong.sun@tum.de, jingui.xie@tum.de"
 

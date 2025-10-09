@@ -8,7 +8,7 @@ This repository provides the implementation of an **Offline Constrained Reinforc
 In addition to the codebase, we provide two curated datasets designed to facilitate further research on extubation and discharge decision-making tasks.
 This repository is created by **Maotong Sun** (maotong.sun@tum.de) and **Jingui Xie** (jingui.xie@tum.de).
 
-**This toolkit is based on our accepted paper on ICU discharge decision-making published in *IISE Transactions on Healthcare Systems Engineering* (available in the `Previous_Research/` folder). The research on ICU extubation decision-making is currently under review.**
+**This toolkit is based on our accepted paper about the application of OCRL method in ICU discharge decision-making, and it is waiting for the publishment in *IISE Transactions on Healthcare Systems Engineering* (available in the `Previous_Research/` folder). Once this article has published online, it will be available at the following permanent link: https://doi.org/10.1080/24725579.2025.2569355. The research on ICU extubation decision-making is currently under major revision in *Health Care Management Science*.**
 
 ## Repository Structure
 

@@ -1,36 +1,36 @@
-# Docker部署验证指南
+# Docker Deployment Validation Guide
 
-本指南用于在另一台计算机上验证ConMED-RL项目的Docker配置是否正确。
+This guide is used to verify the Docker configuration of the ConMED-RL project on another computer.
 
-## 📋 前置条件检查
+## 📋 Prerequisites Check
 
-### 1. 环境要求
+### 1. Environment Requirements
 - Docker Engine 20.10+
 - Docker Compose 1.29+
 - Git
-- curl (用于健康检查)
+- curl (for health checks)
 
-### 2. 环境验证
+### 2. Environment Verification
 ```bash
-# 检查Docker版本
+# Check Docker version
 docker --version
 
-# 检查Docker Compose版本
+# Check Docker Compose version
 docker-compose --version
 
-# 检查Git
+# Check Git
 git --version
 
-# 检查curl
+# Check curl
 curl --version
 ```
 
-## 🚀 快速验证流程
+## 🚀 Quick Validation Process
 
-### 方法1: 使用自动化测试脚本（推荐）
+### Method 1: Using Automated Test Script (Recommended)
 
 ```bash
-# 克隆仓库
+# Clone repository
 git clone https://github.com/your-username/ICU-Decision-Making-OCRL.git
 cd ICU-Decision-Making-OCRL/Docker-Deployment
 
@@ -42,218 +42,218 @@ chmod +x scripts/test_deployment.sh
 scripts\test_deployment.bat
 ```
 
-### 方法2: 手动验证步骤
+### Method 2: Manual Validation Steps
 
-#### 步骤1: 验证配置文件
+#### Step 1: Verify Configuration Files
 ```bash
 cd ICU-Decision-Making-OCRL/Docker-Deployment
 
-# 验证docker-compose语法
+# Verify docker-compose syntax
 docker-compose config
 
-# 验证生产环境配置
+# Verify production environment configuration
 docker-compose -f docker-compose.prod.yml config
 ```
 
-#### 步骤2: 测试开发环境
+#### Step 2: Test Development Environment
 ```bash
-# 构建并启动开发环境
+# Build and start development environment
 docker-compose up --build -d
 
-# 检查容器状态
+# Check container status
 docker-compose ps
 
-# 检查健康状态
+# Check health status
 curl -f http://localhost:5000/health
 
-# 查看日志
+# View logs
 docker-compose logs conmed-rl-app
 
-# 停止开发环境
+# Stop development environment
 docker-compose down
 ```
 
-#### 步骤3: 测试生产环境
+#### Step 3: Test Production Environment
 ```bash
-# 启动生产环境
+# Start production environment
 docker-compose -f docker-compose.prod.yml up --build -d
 
-# 检查容器状态
+# Check container status
 docker-compose -f docker-compose.prod.yml ps
 
-# 检查健康状态
+# Check health status
 curl -f http://localhost/health
 
-# 查看日志
+# View logs
 docker-compose -f docker-compose.prod.yml logs -f
 
-# 停止生产环境
+# Stop production environment
 docker-compose -f docker-compose.prod.yml down
 ```
 
-#### 步骤4: 测试监控栈（可选）
+#### Step 4: Test Monitoring Stack (Optional)
 ```bash
-# 启动完整监控栈
+# Start complete monitoring stack
 docker-compose -f docker-compose.prod.yml --profile monitoring up -d
 
-# 检查监控服务
+# Check monitoring services
 curl -f http://localhost:9090    # Prometheus
 curl -f http://localhost:3000    # Grafana
 
-# 清理
+# Cleanup
 docker-compose -f docker-compose.prod.yml --profile monitoring down
 ```
 
-## ✅ 验证检查清单
+## ✅ Validation Checklist
 
-### 配置验证
-- [ ] `docker-compose.yml` 语法正确
-- [ ] `docker-compose.prod.yml` 语法正确
-- [ ] `Dockerfile` 构建成功
-- [ ] 所有服务名称一致（conmed-rl-*）
+### Configuration Validation
+- [ ] `docker-compose.yml` syntax is correct
+- [ ] `docker-compose.prod.yml` syntax is correct
+- [ ] `Dockerfile` builds successfully
+- [ ] All service names are consistent (conmed-rl-*)
 
-### 功能验证
-- [ ] 开发环境启动成功
-- [ ] 生产环境启动成功
-- [ ] 健康检查端点响应正常
-- [ ] 日志输出正常
-- [ ] 端口映射正确
+### Functional Validation
+- [ ] Development environment starts successfully
+- [ ] Production environment starts successfully
+- [ ] Health check endpoint responds normally
+- [ ] Log output is normal
+- [ ] Port mapping is correct
 
-### 服务验证
-- [ ] 主应用服务运行正常
-- [ ] Nginx代理工作正常
-- [ ] 监控服务可访问（如启用）
+### Service Validation
+- [ ] Main application service runs normally
+- [ ] Nginx proxy works normally
+- [ ] Monitoring services are accessible (if enabled)
 
-## 🔧 故障排除指南
+## 🔧 Troubleshooting Guide
 
-### 常见问题及解决方案
+### Common Issues and Solutions
 
-#### 1. 端口冲突
+#### 1. Port Conflicts
 ```bash
-# 错误: port is already allocated
-# 解决: 检查端口占用
+# Error: port is already allocated
+# Solution: Check port usage
 netstat -tulpn | grep :5000
 netstat -tulpn | grep :80
 
-# 或修改端口映射
-# 在docker-compose.yml中修改ports配置
+# Or modify port mapping
+# Modify ports configuration in docker-compose.yml
 ```
 
-#### 2. 镜像构建失败
+#### 2. Image Build Failure
 ```bash
-# 错误: Build failed
-# 解决: 清理Docker缓存
+# Error: Build failed
+# Solution: Clean Docker cache
 docker system prune -a
 docker-compose build --no-cache
 ```
 
-#### 3. 容器启动失败
+#### 3. Container Startup Failure
 ```bash
-# 检查容器日志
+# Check container logs
 docker-compose logs conmed-rl-app
 
-# 检查容器状态
+# Check container status
 docker-compose ps
 
-# 进入容器调试
+# Enter container for debugging
 docker-compose exec conmed-rl-app /bin/bash
 ```
 
-#### 4. 健康检查失败
+#### 4. Health Check Failure
 ```bash
-# 检查应用是否正常启动
+# Check if application started normally
 docker-compose logs conmed-rl-app
 
-# 手动测试端点
+# Manually test endpoint
 curl -v http://localhost:5000/health
 
-# 检查应用依赖
+# Check application dependencies
 docker-compose exec conmed-rl-app python -c "import flask; print('Flask OK')"
 ```
 
-#### 5. 网络连接问题
+#### 5. Network Connection Issues
 ```bash
-# 检查Docker网络
+# Check Docker network
 docker network ls
 
-# 检查服务间连接
+# Check inter-service connections
 docker-compose exec conmed-rl-app ping nginx
 ```
 
-## 📊 性能验证
+## 📊 Performance Validation
 
-### 资源使用检查
+### Resource Usage Check
 ```bash
-# 监控容器资源使用
+# Monitor container resource usage
 docker stats
 
-# 检查内存使用
+# Check memory usage
 docker-compose exec conmed-rl-app free -h
 
-# 检查磁盘使用
+# Check disk usage
 docker system df
 ```
 
-### 负载测试（可选）
+### Load Testing (Optional)
 ```bash
-# 简单负载测试
+# Simple load test
 for i in {1..100}; do curl -s http://localhost:5000/health; done
 
-# 使用ab工具
+# Using ab tool
 ab -n 100 -c 10 http://localhost:5000/health
 ```
 
-## 🔐 安全验证
+## 🔐 Security Validation
 
-### 安全配置检查
-- [ ] 非root用户运行
-- [ ] 最小权限原则
-- [ ] 敏感信息不在镜像中
-- [ ] 网络隔离正确
+### Security Configuration Check
+- [ ] Running as non-root user
+- [ ] Principle of least privilege
+- [ ] No sensitive information in image
+- [ ] Network isolation is correct
 
-### 安全扫描（可选）
+### Security Scanning (Optional)
 ```bash
-# 扫描镜像漏洞
+# Scan image vulnerabilities
 docker scan conmed-rl-app
 
-# 检查容器权限
+# Check container permissions
 docker inspect conmed-rl-app | grep -i user
 ```
 
-## 📝 验证报告模板
+## 📝 Validation Report Template
 
-### 环境信息
+### Environment Information
 - OS: `uname -a`
-- Docker版本: `docker --version`
-- Docker Compose版本: `docker-compose --version`
+- Docker version: `docker --version`
+- Docker Compose version: `docker-compose --version`
 
-### 测试结果
-- [ ] 配置验证通过
-- [ ] 构建成功
-- [ ] 开发环境部署成功
-- [ ] 生产环境部署成功
-- [ ] 健康检查通过
-- [ ] 性能正常
-- [ ] 安全检查通过
+### Test Results
+- [ ] Configuration validation passed
+- [ ] Build successful
+- [ ] Development environment deployment successful
+- [ ] Production environment deployment successful
+- [ ] Health checks passed
+- [ ] Performance normal
+- [ ] Security checks passed
 
-### 问题记录
-- 遇到的问题及解决方案
-- 性能观察
-- 改进建议
+### Issue Log
+- Issues encountered and solutions
+- Performance observations
+- Improvement suggestions
 
-## 📞 支持信息
+## 📞 Support Information
 
-如果验证过程中遇到问题：
-1. 查看日志: `docker-compose logs -f`
-2. 检查GitHub Issues
-3. 联系维护者:
+If you encounter problems during validation:
+1. View logs: `docker-compose logs -f`
+2. Check GitHub Issues
+3. Contact maintainers:
    - maotong.sun@tum.de
    - jingui.xie@tum.de
 
-## 🎯 最佳实践
+## 🎯 Best Practices
 
-1. **定期验证**: 每次更新后都进行验证
-2. **环境一致性**: 确保测试环境与生产环境一致
-3. **文档更新**: 及时更新配置文档
-4. **备份策略**: 重要数据定期备份
-5. **监控告警**: 设置适当的监控和告警 
+1. **Regular validation**: Perform validation after each update
+2. **Environment consistency**: Ensure test environment matches production environment
+3. **Documentation updates**: Update configuration documentation in a timely manner
+4. **Backup strategy**: Regular backups of important data
+5. **Monitoring and alerts**: Set up appropriate monitoring and alerting

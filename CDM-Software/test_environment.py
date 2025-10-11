@@ -52,7 +52,7 @@ else:
     print(f"Project root: {project_root}")
     
     files_to_check = [
-        os.path.join(project_root, "image", "ConCare-RL Logo.png"),
+        os.path.join(project_root, "image", "ConMED-RL Logo.png"),
         os.path.join(project_root, "Software_FQE_models", "discharge_decision_making", "ocrl_agent_s1_fqe_obj_20250508_v0.pth"),
         os.path.join(project_root, "Software_FQE_models", "discharge_decision_making", "ocrl_agent_s1_fqe_con_rr_20250508_v0.pth"),
         os.path.join(project_root, "Software_FQE_models", "discharge_decision_making", "ocrl_agent_s1_fqe_con_los_20250508_v0.pth")

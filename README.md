@@ -370,6 +370,9 @@ For detailed usage examples and practical implementations, please refer to the *
 This framework enables researchers and clinicians to develop, validate, and deploy offline constrained reinforcement learning systems for critical care environments.
 
 ### Software Module
+<div style="text-align: center;">
+    <img src="image/software_fig_1.png" width="400">
+</div>
 
 The `CDM-Software/` directory contains a **demonstration version** of the clinical decision support software, showcasing how trained OCRL models can be utilized through an interactive web-based application.
 
@@ -428,19 +431,29 @@ For detailed setup instructions, see `CDM-Software/DEPLOYMENT_GUIDE.md`.
 
 **3. Application Features**:
 
-- **Model Selection Interface**:
+- **Model Selection Interface (ICU discharge decision-making case)**:
   - Model 1: FQE Estimated Objective Cost (e.g., mortality risk)
   - Model 2: FQE Estimated Constraint Cost 1 (e.g., readmission risk)
   - Model 3: FQE Estimated Constraint Cost 2 (e.g., ICU length-of-stay)
+<div style="text-align: center;">
+    <img src="image/software_fig_4.png" width="400">
+</div>
 
 - **Patient Data Input System**:
   - Interactive form for inputing physiological variables
   - Real-time progress tracking and validation
   - Data scaling with pre-stored scaler
+<div style="text-align: center;">
+    <img src="image/software_fig_5.png" width="400">
+</div>
 
 - **Risk Assessment Visualization**:
   - Real-time predictions using trained FQE models
   - Q-value estimation results
+
+<div style="text-align: center;">
+    <img src="image/software_fig_6.png" width="400">
+</div>
 
 **4. Utility Scripts**:
 

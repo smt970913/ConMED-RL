@@ -446,12 +446,12 @@ For detailed setup instructions, see `CDM-Software/DEPLOYMENT_GUIDE.md`.
 
 - **Application Launcher** (`run_app.bat` / `run_app.sh`): Cross-platform startup scripts with automatic Python detection and dependency checking
 - **Environment Testing** (`test_environment.py`): Validates system dependencies and model file availability
-- **Lightweight Version** (`web_application_lightweight.py`): Minimal inference-only version with reduced dependencies
+
+**Note**: The repository also contains lightweight model files (`web_application_lightweight.py`, `lightweight_model.py`, `LIGHTWEIGHT_MODEL_GUIDE.md`) which were part of early software design exploration. **The main demonstration application is `web_application_demo.py`** as described above.
 
 For detailed usage instructions, see:
 - `CDM-Software/DEPLOYMENT_GUIDE.md` - Demo running guide
 - `CDM-Software/LOCAL_DEVELOPMENT_GUIDE.md` - Detailed setup instructions
-- `CDM-Software/LIGHTWEIGHT_MODEL_GUIDE.md` - Lightweight version guide
 
 #### Clinical Integration Workflow
 

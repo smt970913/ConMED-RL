@@ -379,7 +379,29 @@ The `CDM-Software/` directory contains a **demonstration version** of the clinic
 
 #### How to Run the Demo
 
-**Quick Start**: Simply execute `web_application_demo.py` to see the web application's interface and functionality:
+**⚠️ Important - First Time Setup**:
+
+Before running the demo, you need to extract the pre-trained FQE models:
+
+1. **Extract the model files**: Unzip `Software_FQE_models.zip` in the project root directory
+   ```bash
+   # This will create the Software_FQE_models/ directory with pre-trained models
+   unzip Software_FQE_models.zip
+   ```
+
+2. **Verify the extraction**: Ensure the following directory structure exists:
+   ```
+   Software_FQE_models/
+   ├── discharge_decision_making/
+   │   ├── demo_pseudo_fqe_model/
+   │   ├── ocrl_agent_s1_fqe_con_los_*.pth
+   │   ├── ocrl_agent_s1_fqe_con_rr_*.pth
+   │   └── ocrl_agent_s1_fqe_obj_*.pth
+   └── extubation_decision_making/
+       └── ...
+   ```
+
+**Quick Start**: After extracting the models, simply execute `web_application_demo.py` to see the web application's interface and functionality:
 
 ```bash
 cd CDM-Software
@@ -388,7 +410,7 @@ python web_application_demo.py
 
 Then open your browser and navigate to: http://localhost:5000
 
-For detailed setup instructions, see `CDM-Software/DEPLOYMENT_GUIDE.md` (now renamed to Demo Guide).
+For detailed setup instructions, see `CDM-Software/DEPLOYMENT_GUIDE.md`.
 
 ---
 

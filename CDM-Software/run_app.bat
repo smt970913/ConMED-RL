@@ -1,11 +1,11 @@
 @echo off
 echo ========================================
-echo ConMED-RL Flask Application Launcher
+echo ConMED-RL Demo Application Launcher
 echo ========================================
 echo.
 
-echo NOTE: This script is for local development and testing.
-echo For production deployment, please use Docker (see Docker-Deployment/).
+echo NOTE: This is a demonstration version for testing and evaluation.
+echo For more information, see DEPLOYMENT_GUIDE.md
 echo.
 
 REM Check if virtual environment should be activated
@@ -91,18 +91,14 @@ echo Please install Python or add it to your PATH variable.
 echo You can download Python from: https://www.python.org/downloads/
 echo Make sure to check "Add Python to PATH" during installation.
 echo.
-echo Alternative: Use Docker for easier deployment
-echo See Docker-Deployment/README.md for instructions.
-echo.
 pause
 exit /b 1
 
 :end
 echo.
-echo Application finished.
+echo Application stopped.
 echo.
-echo TIP: For production deployment, consider using Docker:
-echo   cd ../Docker-Deployment
-echo   docker-compose -f docker-compose.prod.yml up -d
+echo Thank you for trying the ConMED-RL demo!
+echo For more information, visit: https://github.com/smt970913/ConMED-RL
 echo.
 pause 

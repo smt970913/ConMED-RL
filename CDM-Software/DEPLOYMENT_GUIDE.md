@@ -16,6 +16,42 @@ This guide explains how to run the **demonstration version** of the Clinical Dec
 
 ## 🚀 Quick Start - Running the Demo
 
+### ⚠️ First Time Setup: Extract Pre-trained Models
+
+**Important**: Before running the demo for the first time, you must extract the pre-trained FQE models.
+
+1. **Navigate to the project root directory** (if you're not already there):
+   ```bash
+   cd ..  # If you're in CDM-Software/, go back to project root
+   ```
+
+2. **Extract the model archive**:
+   ```bash
+   # On Windows (using PowerShell or Command Prompt with unzip installed)
+   unzip Software_FQE_models.zip
+   
+   # On Linux/Mac
+   unzip Software_FQE_models.zip
+   
+   # Alternative: Use your file manager to extract Software_FQE_models.zip
+   ```
+
+3. **Verify extraction**: Check that `Software_FQE_models/` directory now exists in the project root with the following structure:
+   ```
+   Software_FQE_models/
+   ├── discharge_decision_making/
+   │   ├── demo_pseudo_fqe_model/
+   │   ├── ocrl_agent_s1_fqe_con_los_*.pth
+   │   ├── ocrl_agent_s1_fqe_con_rr_*.pth
+   │   └── ocrl_agent_s1_fqe_obj_*.pth
+   └── extubation_decision_making/
+       └── ...
+   ```
+
+**Note**: This step only needs to be done once. After extraction, you can run the demo multiple times without repeating this step.
+
+---
+
 ### Step 1: Ensure Dependencies are Installed
 
 Make sure you have completed the installation following the main `README.md`:
@@ -84,8 +120,13 @@ The demo application provides:
 **Issue: "Module not found" errors**
 - Solution: Ensure all dependencies are installed: `pip install -r requirements.txt`
 
-**Issue: "Model files not found"**
-- Solution: Verify that the `Software_FQE_models/` directory exists in the project root
+**Issue: "Model files not found" or "FileNotFoundError"**
+- **Cause**: The pre-trained models haven't been extracted from `Software_FQE_models.zip`
+- **Solution**: 
+  1. Navigate to the project root directory
+  2. Extract `Software_FQE_models.zip`: `unzip Software_FQE_models.zip`
+  3. Verify that `Software_FQE_models/` directory now exists with `.pth` model files inside
+  4. See the "First Time Setup" section above for detailed instructions
 
 **Issue: Python not found**
 - Solution: Ensure Python is installed and added to your system PATH

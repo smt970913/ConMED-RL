@@ -9,12 +9,12 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}ConMED-RL Flask Application Launcher${NC}"
+echo -e "${BLUE}ConMED-RL Demo Application Launcher${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 
-echo -e "${YELLOW}NOTE: This script is for local development and testing.${NC}"
-echo -e "${YELLOW}For production deployment, please use Docker (see Docker-Deployment/).${NC}"
+echo -e "${YELLOW}NOTE: This is a demonstration version for testing and evaluation.${NC}"
+echo -e "${YELLOW}For more information, see DEPLOYMENT_GUIDE.md${NC}"
 echo ""
 
 # Check if virtual environment should be activated
@@ -73,8 +73,5 @@ echo -e "${RED}ERROR: Python not found in PATH!${NC}"
 echo ""
 echo "Please install Python or add it to your PATH variable."
 echo "You can install Python from: https://www.python.org/downloads/"
-echo ""
-echo -e "${YELLOW}Alternative: Use Docker for easier deployment${NC}"
-echo -e "${YELLOW}See Docker-Deployment/README.md for instructions.${NC}"
 echo ""
 exit 1 

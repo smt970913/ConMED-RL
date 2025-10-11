@@ -1,89 +1,118 @@
-# 🚀 CDM-Software Deployment Guide
+# 🎯 CDM-Software Demo Guide
+
+## Overview
+
+This guide explains how to run the **demonstration version** of the Clinical Decision Making (CDM) Software. The current version is designed to showcase the functionality of our OCRL-based decision support system through a web interface.
+
+**⚠️ Important Note**: This is a **demonstration prototype**. Clinical deployment in collaboration with healthcare professionals is planned for future work.
 
 ## 📋 System Requirements
 
 ### Minimum Requirements
-- **Operating System**: Linux (Ubuntu 18.04+), Windows 10+, macOS 10.15+
-- **Python**: 3.8 or higher
+- **Operating System**: Windows 10+, Linux (Ubuntu 18.04+), or macOS 10.15+
+- **Python**: 3.10.14 (recommended) or 3.8+
 - **Memory**: At least 4GB RAM
-- **Storage**: At least 10GB available space
-- **Network**: Stable internet connection
+- **Storage**: At least 2GB available space
 
-### Required Software
-1. **Docker** (recommended version ≥ 20.10)
-2. **Docker Compose** (recommended version ≥ 1.29)
+## 🚀 Quick Start - Running the Demo
 
-## 🚀 Quick Deployment (Docker Method - Recommended)
+### Step 1: Ensure Dependencies are Installed
 
-### ⚠️ Important: Docker Configuration Location
-All Docker configurations have been moved to the `Docker-Deployment/` directory. 
-**Do not use docker commands from this directory.**
+Make sure you have completed the installation following the main `README.md`:
 
-### Method 1: Research Environment (Recommended)
 ```bash
-# Navigate to Docker deployment directory
-cd ../Docker-Deployment
-
-# Use research environment (includes Jupyter Lab + Flask)
-chmod +x scripts/build_research.sh
-./scripts/build_research.sh
-```
-
-**Access:**
-- **Jupyter Lab**: http://localhost:8888 (token: `conmed-rl-research`)
-- **Flask App**: http://localhost:5000
-
-### Method 2: Development Environment
-```bash
-# Navigate to Docker deployment directory
-cd ../Docker-Deployment
-
-# Start development environment
-docker-compose -f docker-compose.dev.yml up --build -d
-```
-
-### Method 3: Production Environment
-```bash
-# Navigate to Docker deployment directory
-cd ../Docker-Deployment
-
-# Start production environment
-docker-compose -f docker-compose.prod.yml up --build -d
-```
-
-## 📚 Complete Docker Documentation
-
-For complete Docker setup instructions, please refer to:
-- **Main Docker Guide**: `../Docker-Deployment/README.md`
-- **Quick Start Guide**: `../Docker-Deployment/QUICK_START_GUIDE.md`
-- **Validation Guide**: `../Docker-Deployment/DOCKER_VALIDATION_GUIDE.md`
-
-## 🌐 Alternative Deployment Options
-
-### Option 1: Local Python Environment
-```bash
-# Install dependencies
+# If not already installed
 pip install -r requirements.txt
+```
 
-# Run the application
+### Step 2: Navigate to CDM-Software Directory
+
+```bash
+cd CDM-Software
+```
+
+### Step 3: Run the Demo Application
+
+**Option A: Using the Run Scripts (Recommended)**
+
+**Windows Users:**
+```cmd
+run_app.bat
+```
+
+**Linux/Mac Users:**
+```bash
+chmod +x run_app.sh
+./run_app.sh
+```
+
+**Option B: Direct Python Execution**
+
+```bash
 python web_application_demo.py
 ```
 
-### Option 2: Cloud Server Deployment
+### Step 4: Access the Web Interface
 
-#### AWS EC2
-1. Create EC2 instance (recommended t3.medium or higher configuration)
-2. Install Docker and Docker Compose
-3. Clone the repository
-4. Follow Docker deployment steps above
+Once the application starts, open your web browser and navigate to:
+- **URL**: http://localhost:5000
 
-#### Google Cloud Platform
-1. Create Compute Engine instance
-2. Install Docker and Docker Compose
-3. Clone the repository
-4. Follow Docker deployment steps above
+You should see the ConMED-RL Clinical Decision Support interface.
 
-#### Azure Container Instance
-1. Create Container Instance
-2. Use the Docker images from Docker-Deployment
-3. Configure environment variables
+## 🖥️ Using the Demo Interface
+
+The demo application provides:
+
+1. **Model Selection**: Choose from three FQE models:
+   - Model 1: Objective cost estimation (e.g., mortality risk)
+   - Model 2: Constraint cost 1 estimation (e.g., readmission risk)
+   - Model 3: Constraint cost 2 estimation (e.g., ICU length-of-stay)
+
+2. **Patient Data Input**: Input physiological variables and clinical measurements through an interactive form
+
+3. **Risk Assessment**: View real-time decision support predictions based on trained OCRL models
+
+4. **Results Visualization**: Review risk assessments with confidence intervals
+
+## 🔍 Troubleshooting
+
+### Common Issues
+
+**Issue: "Port 5000 is already in use"**
+- Solution: Stop any other applications using port 5000, or modify the port in `web_application_demo.py`
+
+**Issue: "Module not found" errors**
+- Solution: Ensure all dependencies are installed: `pip install -r requirements.txt`
+
+**Issue: "Model files not found"**
+- Solution: Verify that the `Software_FQE_models/` directory exists in the project root
+
+**Issue: Python not found**
+- Solution: Ensure Python is installed and added to your system PATH
+
+## 📝 Demo Limitations
+
+This demonstration version:
+- ✅ Showcases the core functionality of OCRL-based decision support
+- ✅ Demonstrates the web interface for clinical decision-making
+- ✅ Uses pre-trained FQE models for risk assessment
+- ❌ Is **not** validated for clinical use
+- ❌ Is **not** deployed in a production healthcare environment
+- ❌ Does **not** include security features required for clinical deployment
+
+## 🔮 Future Development
+
+Clinical deployment with healthcare professionals will include:
+- Security hardening and HIPAA compliance
+- Integration with Electronic Health Record (EHR) systems
+- Clinical validation and regulatory approval
+- Comprehensive user training and documentation
+- Production-grade infrastructure and monitoring
+
+For information about planned Docker deployment capabilities (currently under development), see `../Docker-Deployment/README.md`.
+
+## 📞 Support
+
+For questions or issues with the demo:
+- Contact: maotong.sun@tum.de, jingui.xie@tum.de
+- Check the main documentation: `../README.md`

@@ -138,15 +138,17 @@ For full repository access including web application and experiment notebooks:
    ```
 3. Start with example notebooks for MIMIC-IV datasets
 
-#### For Clinical Decision Support:
+#### For Clinical Decision Support (Demo):
 1. Follow **Method 2** (Local Installation)  
 2. Run the web application:
    ```bash
    cd CDM-Software
    python web_application_demo.py
    ```
-3. Access the application at `http://localhost:5000`
-4. Refer to `CDM-Software/DEPLOYMENT_GUIDE.md` for detailed deployment instructions
+3. Access the demo at `http://localhost:5000`
+4. Refer to `CDM-Software/DEPLOYMENT_GUIDE.md` for detailed demo setup instructions
+
+**Note**: This is a demonstration version only. See the Software Module section for limitations and future deployment plans.
 
 #### For Custom Development:
 1. Follow **Method 1** (PyPI Installation) for quick setup
@@ -369,79 +371,65 @@ This framework enables researchers and clinicians to develop, validate, and depl
 
 ### Software Module
 
-The `CDM-Software/` directory contains the clinical decision support software implementation, providing an interactive web-based interface for healthcare professionals to utilize the trained OCRL models (the trained FQE models) in real clinical settings.
+The `CDM-Software/` directory contains a **demonstration version** of the clinical decision support software, showcasing how trained OCRL models can be utilized through an interactive web-based application.
 
----
-#### Interactive Decision Support System (`interactive_support.py`)
-
-The core software module that implements the necessary Fitted-Q-Evaluation (FQE) model inside our OCRL framework optimized for real-time clinical decision support.
-
-#### Web Application (`web_application_demo.py`)
-
-A `Flask`-based web application (now only for demonstration) that provides an intuitive interface for clinical decision-making process.
-
-**Users can simply execute `web_application_demo.py`  in the current directory to gain a comprehensive understanding of our web application's interface and functionality.**
-
-**Application Features:**
-
-1. **Model Selection Interface**:
-   - **Model 1**: FQE Estimated Objective Cost (e.g., mortality risk)
-   - **Model 2**: FQE Estimated Constraint Cost 1 (e.g., readmission risk)
-   - **Model 3**: FQE Estimated Constraint Cost 2 (e.g., ICU length-of-stay)
-
-2. **Patient Data Input System**:
-   - Interactive form for inputing the values of physiological variables
-   - Real-time progress tracking and validation
-   - Data Scaling with pre-stored scaler (if necessary)
-
-3. **Clinical Decision Support**:
-   - Real-time assessment using the trained FQE models
-   - Visual feedback and confidence intervals
-
-4. **Technical Implementation**:
-   - `Flask` web framework with Bootstrap UI
-   - `PyTorch` model integration
-   - `Scikit-learn` preprocessing pipeline
-   - Secure model loading and prediction
+**⚠️ Current Status**: This is a **prototype demonstration**. Clinical deployment in collaboration with healthcare professionals is planned for future work and will require extensive validation, regulatory approval, and security hardening.
 
 ---
 
-#### Testing Tools & Deployment
+#### How to Run the Demo
 
-**Note**: This section is intended to support future deployment of the software in clinical settings and will need to be expanded and revised accordingly.
+**Quick Start**: Simply execute `web_application_demo.py` to see the web application's interface and functionality:
 
-**Environment Testing (`test_environment.py`)**:
-- **Purpose**: Validates system dependencies and file availability
-- **Features**:
-  - Package import verification (`Flask`, `PyTorch`, `NumPy`, `Scikit-learn`, `PIL`)
-  - Model file existence checking
-  - Path validation for deployment
-  - Comprehensive system readiness assessment
+```bash
+cd CDM-Software
+python web_application_demo.py
+```
 
-**Application Launcher (`run_app.bat` / `run_app.sh`)**:
-- **Purpose**: Cross-platform application startup scripts
-- **Features**:
-  - Multiple Python interpreter detection (python, py, python3)
-  - Automatic dependency checking and validation
-  - Virtual environment activation support
-  - Error handling and user guidance
-- **Usage**:
-  - Windows: `run_app.bat`
-  - Linux/Mac: `chmod +x run_app.sh && ./run_app.sh`
+Then open your browser and navigate to: http://localhost:5000
 
-**Deployment Guide (`DEPLOYMENT_GUIDE.md`)**:
-- **System Requirements**: Memory, storage, and network specifications
-- **Deployment Methods**:
-  - Cloud server deployment (AWS EC2, Alibaba Cloud ECS)
-  - Local server installation
-- **Security Configuration**: HTTPS, firewall, environment variables
-- **Monitoring and Maintenance**: Logging, health checks, data backup
-- **Clinical Usage Workflow**: Step-by-step physician user guide
+For detailed setup instructions, see `CDM-Software/DEPLOYMENT_GUIDE.md` (now renamed to Demo Guide).
 
-**Key Deployment Features**:
-- Production-ready configuration with Gunicorn
-- SSL/HTTPS support for secure clinical data handling
-- Comprehensive troubleshooting guide
+---
+
+#### Demo Application Components
+
+**1. Interactive Decision Support System (`interactive_support.py`)**
+- Core module implementing Fitted-Q-Evaluation (FQE) models from the OCRL framework
+- Optimized for inference and Q-value estimation
+- Provides the backend logic for clinical decision support
+
+**2. Web Application (`web_application_demo.py`)**
+- `Flask`-based web application providing an intuitive demo interface
+- Demonstrates the potential clinical decision-making workflow
+- **Technical Stack**: Flask + Bootstrap UI + PyTorch + Scikit-learn
+
+**3. Application Features**:
+
+- **Model Selection Interface**:
+  - Model 1: FQE Estimated Objective Cost (e.g., mortality risk)
+  - Model 2: FQE Estimated Constraint Cost 1 (e.g., readmission risk)
+  - Model 3: FQE Estimated Constraint Cost 2 (e.g., ICU length-of-stay)
+
+- **Patient Data Input System**:
+  - Interactive form for inputing physiological variables
+  - Real-time progress tracking and validation
+  - Data scaling with pre-stored scaler
+
+- **Risk Assessment Visualization**:
+  - Real-time predictions using trained FQE models
+  - Q-value estimation results
+
+**4. Utility Scripts**:
+
+- **Application Launcher** (`run_app.bat` / `run_app.sh`): Cross-platform startup scripts with automatic Python detection and dependency checking
+- **Environment Testing** (`test_environment.py`): Validates system dependencies and model file availability
+- **Lightweight Version** (`web_application_lightweight.py`): Minimal inference-only version with reduced dependencies
+
+For detailed usage instructions, see:
+- `CDM-Software/DEPLOYMENT_GUIDE.md` - Demo running guide
+- `CDM-Software/LOCAL_DEVELOPMENT_GUIDE.md` - Detailed setup instructions
+- `CDM-Software/LIGHTWEIGHT_MODEL_GUIDE.md` - Lightweight version guide
 
 #### Clinical Integration Workflow
 
@@ -457,7 +445,7 @@ Parameters                                                                      
 - **ICU Discharge Decision Support**: Risk assessment for patient discharge readiness
 - **ICU Extubation Decision Support**: Evaluation of mechanical ventilation weaning for patients in ICU
 
-This software module bridges the gap between research-grade OCRL algorithms and practical clinical deployment, providing healthcare professionals with AI-assisted decision support tools that maintain clinical safety standards while leveraging advanced Offline RL techniques.
+This software demo bridges the gap between research-grade OCRL algorithms and potential clinical applications, demonstrating how AI-assisted decision support tools could be deployed to assist healthcare professionals while maintaining clinical safety standards and leveraging advanced Offline RL techniques.
 
 ## Docker Deployment Module
 

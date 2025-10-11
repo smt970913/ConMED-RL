@@ -155,55 +155,6 @@ Lightweight model results differ from original model
 3. **Test permissions**: Ensure model file read permissions
 4. **Run tests**: Use `test_lightweight_model.py` for diagnosis
 
-## 🔒 Production Deployment
-
-### Docker Deployment
-
-**⚠️ Important**: For complete Docker deployment, please use the configurations in `../Docker-Deployment/` directory.
-
-#### Quick Docker Deployment
-```bash
-# Navigate to Docker deployment directory
-cd ../Docker-Deployment
-
-# For lightweight deployment, use research environment
-chmod +x scripts/build_research.sh
-./scripts/build_research.sh
-```
-
-#### Manual Lightweight Container (Advanced)
-If you need a minimal container with just the lightweight model:
-
-```dockerfile
-FROM python:3.10-slim
-
-WORKDIR /app
-COPY lightweight_model.py .
-COPY web_application_lightweight.py .
-
-# Install minimal dependencies
-RUN pip install torch==1.13.1 flask==2.2.2 --no-cache-dir
-
-EXPOSE 5001
-CMD ["python", "web_application_lightweight.py"]
-```
-
-### Complete Docker Documentation
-
-For full Docker setup with all components:
-- **Main Docker Guide**: `../Docker-Deployment/README.md`
-- **Quick Start Guide**: `../Docker-Deployment/QUICK_START_GUIDE.md`
-- **Validation Guide**: `../Docker-Deployment/DOCKER_VALIDATION_GUIDE.md`
-
-### Lightweight Dependencies
-
-For standalone deployment, create `requirements_lightweight.txt`:
-```
-torch>=1.13.1
-flask>=2.2.2
-numpy>=1.23.5
-```
-
 ## 📈 Performance Comparison
 
 | Metric | Original Version | Lightweight Version | Improvement |
@@ -212,6 +163,12 @@ numpy>=1.23.5
 | Memory Usage | ~200MB | ~80MB | 60% |
 | File Size | 32KB | 6KB | 81% |
 | Dependencies | High | Low | - |
+
+## 🔮 Future Deployment
+
+For information about planned deployment options (Docker, cloud services, etc.), see `../Docker-Deployment/README.md`. 
+
+**Note**: Docker deployment is currently under development. For now, use the local Python environment methods described above.
 
 ## ⚠️ Important Notes
 

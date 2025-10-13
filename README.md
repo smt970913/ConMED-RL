@@ -4,7 +4,7 @@
     <img src="image/ConMED-RL Logo.png" width="400">
 </div>
 
-This repository provides the implementation of an **Offline Constrained Reinforcement Learning (OCRL)** - based decision support toolkit for medical decision-making. The toolkit is developed based on our research on **ICU extubation** and **discharge** decision-making. It builds on our studies in modeling and optimizing clinical decisions under uncertainty in the ICU setting.
+This repository provides the implementation of an **Offline Constrained Reinforcement Learning (OCRL)** - based decision support toolkit for medical decision-making. The toolkit is developed based on our research on **ICU extubation** and **discharge** decision-making. It builds on our proposed multi-timescale offline constrained policy learning framework.
 Beyond the core algorithm module, this toolkit includes a comprehensive data preprocessing pipeline that transforms raw clinical data into formats suitable for offline RL/OCRL training, as well as an interactive web-based application powered by trained Fitted-Q-Evaluation (FQE) models for clinical decision support.
 This repository is created by **Maotong Sun** (maotong.sun@tum.de) and **Jingui Xie** (jingui.xie@tum.de).
 

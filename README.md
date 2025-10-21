@@ -1,5 +1,9 @@
 # ConMED-RL: An OCRL-Based Toolkit for Medical Decision Support
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![PyPI version](https://badge.fury.io/py/conmedrl.svg)](https://badge.fury.io/py/conmedrl)
+
 <div style="text-align: center;">
     <img src="image/ConMED-RL Logo.png" width="400">
 </div>

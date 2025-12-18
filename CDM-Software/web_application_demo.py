@@ -41,9 +41,9 @@ import os
 import pickle
 import pandas as pd
 import sys
-from interactive_support import *
+from interactive_support_1 import *
 # Import FQE class specifically to ensure model loading works
-from interactive_support import FQE
+from interactive_support_1 import FQE
 
 # from dotenv import load_dotenv
 
@@ -291,7 +291,7 @@ DISCHARGE_SCALER_FILE = os.path.join(MODELS_DIR, 'discharge_minmax_scaler.pkl')
 EXTUBATION_SCALER_FILE = os.path.join(MODELS_DIR, 'extubation_standard_scaler.pkl')
 
 # Ensure models directory exists
-os.makedirs(MODELS_DIR, exist_ok=True)
+os.makedirs(MODELS_DIR, exist_ok = True)
 
 app = Flask(__name__)
 # In production environment, secret key should be set using environment variables
@@ -393,8 +393,10 @@ def load_scaler(decision_type):
             dummy_data = np.array([
                 # Format: [min_values, max_values] for 35 features (excluding gender and readmission_count)
                 # age, weight, HR, ArterialO2, Hgb, ArterialCO2, pH_venous, Hct, WBC, Cl, Cr, Glu, Mg, Na, pH_arterial, FiO2, BE, BUN, Ca, Bili, Glu_blood, K, HCO3, Plt, PT, PTT, INR, SBP, DBP, MBP, Temp, SaO2, GCS score, RR, TV(L)
-                [18, 0.0, 13.5, 0, 2.1, 8.7, 7.0, 6.9, 0.05, 75, 0.0, 0.0, 0.8, 116.0, 7.05, 0.0, -18, 1.0, 0.775, 0.0, 0.0, 1.6, 3.33, 0.0, 7.1, 0.0, 0.5, 30, 6.0, 20.4, 35.0, 85.81, 3.0, 0.0, 0.0],  # min values (35 features)
-                [91, 180.0, 165.3, 337, 18.95, 77.0, 7.71, 55.7, 35.2, 131.0, 4.90, 317.0, 3.475, 161.50, 7.73, 100.00, 17.0, 114.0, 1.468, 7.60, 298.0, 6.5, 45.0, 648.0, 32.30, 108.65, 2.80, 206.08, 119.67, 135.86, 38.69, 106.33, 15.0, 72.0, 1.12]   # max values (35 features)
+                # [18, 0.0, 13.5, 0, 2.1, 8.7, 7.0, 6.9, 0.05, 75, 0.0, 0.0, 0.8, 116.0, 7.05, 0.0, -18, 1.0, 0.775, 0.0, 0.0, 1.6, 3.33, 0.0, 7.1, 0.0, 0.5, 30, 6.0, 20.4, 35.0, 85.81, 3.0, 0.0, 0.0],  # min values (35 features)
+                [18.0, 0.0, 13.5, 0.0, 2.1, 8.666666666666666, 7.03, 6.9, 0.05, 75.0, 0.0, 0.0, 0.8, 116.0, 7.046666666666667, 0.0, -18.0, 1.0, 0.7749999999999999, 0.0, 0.0, 1.6, 3.333333333333333, 0.0, 7.1, 0.0, 0.5, 30.0, 6.0, 20.4, 35.0, 85.81818181818181, 3.0, 0.0, 0.0],
+                [91.0, 179.622432, 165.33333333333334, 337.0, 18.95, 77.0, 7.709999999999999, 55.7, 35.2, 131.0, 4.9, 317.0, 3.475, 161.5, 7.73, 100.0, 17.000000000000004, 114.0, 1.468, 7.6, 298.0, 6.5, 45.0, 648.0, 32.300000000000004, 108.65, 2.8000000000000003, 206.08333333333337, 119.66666666666669, 135.85714285714286, 38.69444444444444, 106.33333333333331, 15.0, 72.0, 1.117],
+                # [91, 180.0, 165.3, 337, 18.95, 77.0, 7.71, 55.7, 35.2, 131.0, 4.90, 317.0, 3.475, 161.50, 7.73, 100.00, 17.0, 114.0, 1.468, 7.60, 298.0, 6.5, 45.0, 648.0, 32.30, 108.65, 2.80, 206.08, 119.67, 135.86, 38.69, 106.33, 15.0, 72.0, 1.12]   # max values (35 features)
             ])
             temp_scaler.fit(dummy_data)
             print(f"✓ Temporary MinMaxScaler created for discharge decision making (35 features)")
@@ -697,8 +699,8 @@ INDEX_HTML_TEMPLATE = """
 </html>
 """
 
-# HTML template for the predict page
-PREDICT_HTML_TEMPLATE = """
+# HTML template for the estimate page
+ESTIMATE_HTML_TEMPLATE = """
 <!doctype html>
 <html lang="en">
 <head>
@@ -736,6 +738,19 @@ PREDICT_HTML_TEMPLATE = """
             padding: 12px 30px;
             font-size: 16px;
             font-weight: bold;
+        }
+        .btn-test-input {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            margin-right: 10px;
+        }
+        .btn-test-input:hover {
+            background: linear-gradient(135deg, #218838 0%, #1aa179 100%);
+            color: white;
         }
     </style>
 </head>
@@ -795,7 +810,7 @@ PREDICT_HTML_TEMPLATE = """
                                         {% set config = field_configs[idx] %}
                                         <input type="number" class="form-control" id="input_{{ idx }}" name="input_{{ idx }}" 
                                                min="{{ config.min }}" max="{{ config.max }}" 
-                                               step="{{ config.step }}" placeholder="{{ config.placeholder }}" required>
+                                               step="any" placeholder="{{ config.placeholder }}" required>
                                     {% endif %}
                                 </div>
                             </div>
@@ -808,6 +823,11 @@ PREDICT_HTML_TEMPLATE = """
         {% endfor %}
         
         <div class="text-center mt-4 mb-4">
+            {% if decision_type == 'discharge' %}
+            <button type="button" class="btn btn-lg btn-test-input" onclick="fillDefaultTestInput()">
+                <i class="fas fa-flask"></i> Default Test Input
+            </button>
+            {% endif %}
             <button type="submit" class="btn btn-primary btn-lg btn-submit">
                 <i class="fas fa-calculator"></i> Submit Analysis
             </button>
@@ -864,6 +884,86 @@ PREDICT_HTML_TEMPLATE = """
         // Initial progress update
         updateProgress();
     });
+    
+    {% if decision_type == 'discharge' %}
+    function fillDefaultTestInput() {
+        // Default test input values for discharge decision making (37 fields)
+        const defaultValues = {
+            0: 52.0,           // age
+            1: '0',            // M (Gender: 0 = Female)
+            2: 39.326426,      // weight
+            3: 96.5,           // Heart Rate
+            4: 145.06,         // Arterial O2 pressure
+            5: 11.16,          // Hemoglobin
+            6: 40.26,          // Arterial CO2 Pressure
+            7: 7.391,          // PH (Venous)
+            8: 33.52,          // Hematocrit (serum)
+            9: 16.9,           // WBC
+            10: 102.0,         // Chloride (serum)
+            11: 0.5,           // Creatinine (serum)
+            12: 115.0,         // Glucose (serum)
+            13: 2.3,           // Magnesium
+            14: 132.0,         // Sodium (serum)
+            15: 7.381,         // PH (Arterial)
+            16: 52.65,         // Inspired O2 Fraction
+            17: 0.366667,      // Arterial Base Excess
+            18: 33.0,          // BUN
+            19: 1.121,         // Ionized Calcium
+            20: 1.86,          // Total Bilirubin
+            21: 115.6,         // Glucose (whole blood)
+            22: 4.7,           // Potassium (serum)
+            23: 21.0,          // HCO3 (serum)
+            24: 201.0,         // Platelet Count
+            25: 12.98,         // Prothrombin time
+            26: 42.48,         // PTT
+            27: 1.18,          // INR
+            28: 88.9,          // Blood Pressure Systolic
+            29: 54.1,          // Blood Pressure Diastolic
+            30: 62.3,          // Blood Pressure Mean
+            31: 37.203704,     // Temperature C
+            32: 96.3,          // SaO2
+            33: 14.666667,     // GCS score
+            34: 8.2,           // Respiratory Rate
+            35: 0.531133,      // Tidal Volume
+            36: 0.0            // readmission_count
+        };
+        
+        // Fill all input fields
+        for (let idx in defaultValues) {
+            const inputElement = document.getElementById('input_' + idx);
+            if (inputElement) {
+                if (inputElement.tagName === 'SELECT') {
+                    // For select element (gender)
+                    inputElement.value = defaultValues[idx];
+                } else {
+                    // For input element
+                    inputElement.value = defaultValues[idx];
+                }
+                // Trigger input event to update progress bar
+                inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        }
+        
+        // Update progress bar after filling
+        let inputs = document.querySelectorAll("input, select");
+        let filledFields = 0;
+        inputs.forEach(input => {
+            if (input.value.trim() !== '') {
+                filledFields++;
+            }
+        });
+        let totalFields = inputs.length;
+        let percentage = (filledFields / totalFields) * 100;
+        let progressBar = document.getElementById('progress-bar');
+        if (progressBar) {
+            progressBar.style.width = percentage + '%';
+            progressBar.textContent = filledFields + '/' + totalFields + ' completed';
+        }
+        
+        // Show confirmation message
+        alert('Default test input values have been filled in all fields.');
+    }
+    {% endif %}
     
     function validateForm() {
         let inputs = document.querySelectorAll("input, select");
@@ -1013,14 +1113,14 @@ function selectDecision(decisionType) {
 </html>
 """
 
-# HTML template for prediction results
+# HTML template for estimation results
 RESULTS_HTML_TEMPLATE = """
 <!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Prediction Results</title>
+    <title>Estimation Results</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
@@ -1040,7 +1140,7 @@ RESULTS_HTML_TEMPLATE = """
             padding: 40px;
             margin-bottom: 20px;
         }
-        .prediction-value {
+        .estimated-value {
             font-size: 4rem;
             font-weight: bold;
             text-align: center;
@@ -1048,14 +1148,38 @@ RESULTS_HTML_TEMPLATE = """
             padding: 30px;
             border-radius: 15px;
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            transition: all 0.3s ease;
         }
-        .prediction-value.cost-estimate {
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        .estimated-value.cost-estimate {
             color: #01579b;
         }
-        .prediction-value.length-stay {
-            background: linear-gradient(135deg, #cce7ff 0%, #b3d9ff 100%);
+        .estimated-value.length-stay {
             color: #004085;
+        }
+        .benchmark-comparison {
+            background: #f8f9fa;
+            border-left: 4px solid #0891b2;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .recommendation-box {
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        .recommendation-box.warning {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-left: 5px solid #ff9800;
+            color: #856404;
+        }
+        .recommendation-box.success {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            border-left: 5px solid #28a745;
+            color: #155724;
         }
         .model-info {
             background: #f8f9fa;
@@ -1112,7 +1236,7 @@ RESULTS_HTML_TEMPLATE = """
             </div>
         </div>
         
-        <h1 class="text-center mb-4">FQE Model Prediction Results</h1>
+        <h1 class="text-center mb-4">FQE Model Estimation Results</h1>
         
         <div class="model-info">
             <h5><i class="fas fa-cog"></i> Model Information</h5>
@@ -1121,12 +1245,60 @@ RESULTS_HTML_TEMPLATE = """
             <p><strong>Selected Model:</strong> Model {{ model_index + 1 }} - {{ model_description }}</p>
         </div>
         
-        <div class="prediction-value {% if 'Length of Stay' in risk_level %}length-stay{% else %}cost-estimate{% endif %}">
-            <div class="mb-2" style="font-size: 1.2rem; font-weight: normal;">FQE Prediction Result</div>
-            <div>{{ "%.4f"|format(prediction_value) }}</div>
+        {% set intensity = color_intensity|float %}
+        {% if 'Length of Stay' in risk_level %}
+            {# Blue gradient: light blue (204, 231, 255) to darker blue (102, 153, 204) #}
+            {% set r = 204 - (102 * intensity)|int %}
+            {% set g = 231 - (78 * intensity)|int %}
+            {% set b = 255 - (51 * intensity)|int %}
+            {% set bg_color = "rgb({}, {}, {})".format(r, g, b) %}
+            {% set text_color = "#004085" %}
+        {% else %}
+            {# Red gradient: light blue (227, 242, 253) to red (255, 200, 200) for cost/risk #}
+            {% set r = 227 + (28 * intensity)|int %}
+            {% set g = 242 - (42 * intensity)|int %}
+            {% set b = 253 - (53 * intensity)|int %}
+            {% set bg_color = "rgb({}, {}, {})".format(r, g, b) %}
+            {% set text_color = "#01579b" %}
+            {% if intensity > 0.5 %}
+                {% set text_color = "#8b0000" %}
+            {% endif %}
+        {% endif %}
+        <div class="estimated-value {% if 'Length of Stay' in risk_level %}length-stay{% else %}cost-estimate{% endif %}" 
+             style="background: linear-gradient(135deg, {{ bg_color }} 0%, {{ bg_color }} 100%); color: {{ text_color }};">
+            <div class="mb-2" style="font-size: 1.2rem; font-weight: normal;">FQE Estimation Result</div>
+            <div>{{ "%.4f"|format(estimated_value) }}</div>
             <div class="mt-2" style="font-size: 1.5rem;">{{ risk_level }}</div>
-            <div class="mt-2" style="font-size: 1.0rem; font-weight: normal; font-style: italic;">{% if 'Cost' in risk_level %}(Lower values indicate better predicted outcomes){% endif %}</div>
+            <div class="mt-2" style="font-size: 1.0rem; font-weight: normal; font-style: italic;">{% if 'Cost' in risk_level %}(Lower values indicate better estimated outcomes){% endif %}</div>
         </div>
+        
+        {% if decision_type == 'discharge' and benchmark_value is not none %}
+        <div class="benchmark-comparison">
+            <h5><i class="fas fa-chart-line"></i> MIMIC-IV Benchmark Comparison</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-1"><strong>FQE Estimated Value:</strong> {{ "%.4f"|format(estimated_value) }}</p>
+                    <p class="mb-1"><strong>{{ benchmark_label }}:</strong> {{ "%.4f"|format(benchmark_value) }}</p>
+                </div>
+                <div class="col-md-6">
+                    {% if exceeds_benchmark %}
+                    <p class="mb-1 text-danger"><strong>Status:</strong> <i class="fas fa-exclamation-triangle"></i> Exceeds Benchmark</p>
+                    <p class="mb-0"><strong>Difference:</strong> <span class="text-danger">+{{ "%.4f"|format(estimated_value - benchmark_value) }}</span> ({{ "%.1f"|format(((estimated_value - benchmark_value) / benchmark_value * 100)) }}% higher)</p>
+                    {% else %}
+                    <p class="mb-1 text-success"><strong>Status:</strong> <i class="fas fa-check-circle"></i> Within Benchmark</p>
+                    <p class="mb-0"><strong>Difference:</strong> <span class="text-success">{{ "%.4f"|format(estimated_value - benchmark_value) }}</span> ({{ "%.1f"|format(((estimated_value - benchmark_value) / benchmark_value * 100)) }}% {{ 'higher' if estimated_value > benchmark_value else 'lower' }})</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        {% if recommendation %}
+        <div class="recommendation-box {% if exceeds_benchmark %}warning{% else %}success{% endif %}">
+            <h5><i class="fas fa-{% if exceeds_benchmark %}exclamation-triangle{% else %}check-circle{% endif %}"></i> Clinical Recommendation</h5>
+            <p class="mb-0" style="font-size: 1.05rem;">{{ recommendation }}</p>
+        </div>
+        {% endif %}
+        {% endif %}
         
         <div class="interpretation-box">
             <h5><i class="fas fa-info-circle"></i> Interpretation</h5>
@@ -1138,7 +1310,7 @@ RESULTS_HTML_TEMPLATE = """
             <h6>Clinical Interpretation Guidelines:</h6>
             <ul class="small">
                 {% if model_index == 0 %}
-                <li><strong>FQE Cost Interpretation:</strong> This model estimates the expected mortality cost. Lower values generally indicate more favorable predicted outcomes for discharge.</li>
+                <li><strong>FQE Cost Interpretation:</strong> This model estimates the expected mortality cost. Lower values generally indicate more favorable estimated outcomes for discharge.</li>
                 <li><strong>Clinical Context:</strong> The numerical value should be interpreted within the broader clinical picture, including patient stability, comorbidities, and social support systems.</li>
                 <li><strong>Decision Authority:</strong> Specific action thresholds and final discharge decisions remain under the purview of the attending physician.</li>
                 {% elif model_index == 1 %}
@@ -1157,7 +1329,7 @@ RESULTS_HTML_TEMPLATE = """
             <h6>Clinical Interpretation Guidelines:</h6>
             <ul class="small">
                 {% if model_index == 0 %}
-                <li><strong>FQE Cost Interpretation:</strong> This model estimates the expected extubation failure cost. Lower values indicate more favorable predicted outcomes for extubation.</li>
+                <li><strong>FQE Cost Interpretation:</strong> This model estimates the expected extubation failure cost. Lower values indicate more favorable estimated outcomes for extubation.</li>
                 <li><strong>Clinical Context:</strong> Extubation readiness should be assessed comprehensively, including respiratory parameters, neurological status, and airway protection capability.</li>
                 <li><strong>Decision Authority:</strong> The timing and appropriateness of extubation remain clinical decisions made by qualified healthcare professionals.</li>
                 {% else %}
@@ -1179,7 +1351,7 @@ RESULTS_HTML_TEMPLATE = """
         </div>
         
         <div class="text-center mt-4">
-            <a href="{{ url_for('predict', decision_type=decision_type, threshold_set=threshold_set, model_index=model_index) }}" 
+            <a href="{{ url_for('estimate', decision_type=decision_type, threshold_set=threshold_set, model_index=model_index) }}" 
                class="btn btn-primary btn-action">
                 <i class="fas fa-edit"></i> Analyze Another Patient
             </a>
@@ -1367,7 +1539,7 @@ def threshold_selection(decision_type):
         flash("Invalid decision type", "error")
         return redirect(url_for('decision_type_selection'))
     
-    return render_template_string(THRESHOLD_SELECTION_HTML_TEMPLATE, decision_type=decision_type)
+    return render_template_string(THRESHOLD_SELECTION_HTML_TEMPLATE, decision_type = decision_type)
 
 @app.route('/model_selection/<decision_type>/<threshold_set>', methods = ['GET', 'POST'])
 def model_selection(decision_type, threshold_set):
@@ -1378,14 +1550,14 @@ def model_selection(decision_type, threshold_set):
     
     if threshold_set not in ['threshold_set_1', 'threshold_set_2']:
         flash("Invalid threshold setting", "error")
-        return redirect(url_for('threshold_selection', decision_type=decision_type))
+        return redirect(url_for('threshold_selection', decision_type = decision_type))
     
     model_files = get_model_files(decision_type, threshold_set)
     
     if request.method == 'POST':
         model_index = int(request.form.get('model_selection')) - 1
         if 0 <= model_index < len(model_files):
-            return redirect(url_for('predict', decision_type=decision_type, threshold_set=threshold_set, model_index=model_index))
+            return redirect(url_for('estimate', decision_type=decision_type, threshold_set=threshold_set, model_index = model_index))
         else:
             flash("Invalid model selection", "error")
 
@@ -1494,8 +1666,8 @@ def decline():
     """
     return render_template_string(decline_html)
 
-@app.route('/predict/<decision_type>/<threshold_set>/<int:model_index>', methods = ['GET', 'POST'])
-def predict(decision_type, threshold_set, model_index):
+@app.route('/estimate/<decision_type>/<threshold_set>/<int:model_index>', methods = ['GET', 'POST'])
+def estimate(decision_type, threshold_set, model_index):
     model_files = get_model_files(decision_type, threshold_set)
     if model_index < 0 or model_index >= len(model_files):
         flash("Invalid model selection", "error")
@@ -1521,7 +1693,7 @@ def predict(decision_type, threshold_set, model_index):
             input_values = [float(request.form.get(f"input_{i}")) for i in range(expected_num_vars)]
             if len(input_values) != expected_num_vars:
                 flash(f"Please enter all {expected_num_vars} variables for {decision_type} decision making.", "error")
-                return redirect(url_for('predict', decision_type = decision_type, threshold_set = threshold_set, model_index = model_index))
+                return redirect(url_for('estimate', decision_type = decision_type, threshold_set = threshold_set, model_index = model_index))
 
             # Process features based on decision type
             # Important: Gender (index 1) should not be scaled for both decision types
@@ -1584,8 +1756,8 @@ def predict(decision_type, threshold_set, model_index):
             print(f"🔢 Input tensor shape: {final_input_tensor.shape}")
             print(f"🔢 Input tensor device: {final_input_tensor.device}")
 
-            # Use the model to make predictions and return the result
-            print('🧠 Starting model prediction...')
+            # Use the model to make estimations and return the result
+            print('🧠 Starting model estimation...')
             with torch.no_grad():
                 response = model.avg_Q_value_est(final_input_tensor)
                 print(f"🧠 Raw model response: {response}")
@@ -1595,9 +1767,9 @@ def predict(decision_type, threshold_set, model_index):
                 if torch.is_tensor(response):
                     response = response.item()
                     print(f"🧠 Converted response: {response}")
-            print('✅ Model prediction completed!')
+            print('✅ Model estimation completed!')
 
-            print(f"DEBUG: Prediction response: {response}")
+            print(f"DEBUG: Estimation response: {response}")
             
             # Get model description based on decision type and model index
             if decision_type == 'discharge':
@@ -1617,35 +1789,88 @@ def predict(decision_type, threshold_set, model_index):
             # Add interpretation context
             if decision_type == 'discharge':
                 if model_index == 0:  # OBJ - Mortality Risk
-                    interpretation = "This FQE model estimates the expected mortality cost associated with the discharge decision. Lower values indicate better predicted outcomes. The clinical significance and appropriate action thresholds should be determined by the attending physician based on the patient's overall condition and clinical context."
-                    risk_level = "Estimated Mortality Cost"
+                    interpretation = "This FQE model estimates the expected mortality cost associated with the discharge decision. Lower values indicate better estimated outcomes. The clinical significance and appropriate action thresholds should be determined by the attending physician based on the patient's overall condition and clinical context."
+                    risk_level = "FQE Estimated Mortality Risk (OBJ)"
                 elif model_index == 1:  # CON_RR - Readmission Risk
                     interpretation = "This FQE model estimates the expected readmission cost associated with the discharge decision. Lower values suggest lower likelihood of ICU readmission. Clinical interpretation and decision-making should be performed by qualified healthcare professionals considering all relevant patient factors."
-                    risk_level = "Estimated Readmission Cost"
+                    risk_level = "FQE Estimated Readmission Risk (CON_RR)"
                 elif model_index == 2:  # CON_LOS - Length-of-Stay
-                    interpretation = f"This FQE model estimates the expected hospital length of stay following discharge. The predicted value is approximately {response:.1f} days. This estimation should be used as supportive information alongside clinical judgment and hospital resource planning considerations."
-                    risk_level = "Estimated Length of Stay"
+                    interpretation = f"This FQE model estimates the expected ICU length of stay. The estimated value is approximately {response:.1f} hours. This estimation should be used as supportive information alongside clinical judgment and hospital resource planning considerations."
+                    risk_level = "FQE Estimated ICU Length-of-Stay (CON_LOS)"
             else:  # extubation
                 if model_index == 0:  # OBJ - Extubation Failure Risk
-                    interpretation = "This FQE model estimates the expected extubation failure cost. Lower values indicate better predicted outcomes for successful extubation. The final decision on extubation timing should be made by the clinical team based on comprehensive assessment of respiratory function and patient readiness."
-                    risk_level = "Estimated Extubation Failure Cost"
+                    interpretation = "This FQE model estimates the expected extubation failure cost. Lower values indicate better estimated outcomes for successful extubation. The final decision on extubation timing should be made by the clinical team based on comprehensive assessment of respiratory function and patient readiness."
+                    risk_level = "FQE Estimated Extubation Failure Risk (OBJ)"
                 elif model_index == 1:  # CON - Length-of-Stay
-                    interpretation = f"This FQE model estimates the expected ICU length of stay. The predicted value is approximately {response:.1f} days. This information should be interpreted by clinicians in conjunction with patient condition and ICU resource management needs."
-                    risk_level = "Estimated ICU Length of Stay"
+                    interpretation = f"This FQE model estimates the expected ICU length of stay after initiation of MV treatment. The estimated value is approximately {response:.1f} hours. This information should be interpreted by clinicians in conjunction with patient condition and ICU resource management needs."
+                    risk_level = "FQE Estimated ICU Length-of-Stay after MV initiation (CON)"
             
             print(f"DEBUG: Model description: {model_desc}")
             print(f"DEBUG: Risk level: {risk_level}")
             
+            # Calculate benchmark comparison and recommendation for discharge decision making
+            benchmark_value = None
+            benchmark_label = None
+            exceeds_benchmark = False
+            recommendation = None
+            color_intensity = 0.0  # For dynamic background color (0.0 to 1.0)
+            
+            if decision_type == 'discharge':
+                # MIMIC-IV benchmark values
+                if model_index == 0:  # Mortality Risk
+                    benchmark_value = 0.082  # 8.2%
+                    benchmark_label = "MIMIC-IV Mortality Risk Mean (8.2%)"
+                    exceeds_benchmark = response > benchmark_value
+                    # Calculate color intensity: normalize to 0-1 range (assuming max reasonable value is 0.5)
+                    color_intensity = min(response / 0.5, 1.0)
+                    if exceeds_benchmark:
+                        recommendation = "⚠️ Recommendation: Do NOT discharge - FQE estimated mortality risk exceeds MIMIC-IV benchmark. Consider continuing ICU care."
+                    else:
+                        recommendation = "✓ Recommendation: FQE estimated mortality risk is within acceptable range compared to MIMIC-IV benchmark."
+                elif model_index == 1:  # Readmission Risk
+                    benchmark_value = 0.147  # 14.7%
+                    benchmark_label = "MIMIC-IV Readmission Risk Mean (14.7%)"
+                    exceeds_benchmark = response > benchmark_value
+                    # Calculate color intensity: normalize to 0-1 range (assuming max reasonable value is 0.5)
+                    color_intensity = min(response / 0.5, 1.0)
+                    if exceeds_benchmark:
+                        recommendation = "⚠️ Recommendation: Do NOT discharge - FQE estimated readmission risk exceeds MIMIC-IV benchmark. Consider continuing ICU care."
+                    else:
+                        recommendation = "✓ Recommendation: FQE estimated readmission risk is within acceptable range compared to MIMIC-IV benchmark."
+                elif model_index == 2:  # ICU LOS
+                    benchmark_value = 66.39  # hours
+                    benchmark_label = "MIMIC-IV ICU LOS Mean (66.39 hours)"
+                    exceeds_benchmark = response > benchmark_value
+                    # Calculate color intensity: normalize to 0-1 range (assuming max reasonable value is 200 hours)
+                    color_intensity = min(response / 200.0, 1.0)
+                    if exceeds_benchmark:
+                        recommendation = "⚠️ Recommendation: Do NOT discharge - FQE estimated ICU LOS exceeds MIMIC-IV benchmark. Consider continuing ICU care."
+                    else:
+                        recommendation = "✓ Recommendation: FQE estimated ICU LOS is within acceptable range compared to MIMIC-IV benchmark."
+            else:  # extubation
+                # Calculate color intensity for extubation models
+                if model_index == 0:  # Extubation Failure Risk
+                    # Normalize to 0-1 range (assuming max reasonable value is 0.5)
+                    color_intensity = min(response / 0.5, 1.0)
+                elif model_index == 1:  # ICU LOS
+                    # Normalize to 0-1 range (assuming max reasonable value is 200 hours)
+                    color_intensity = min(response / 200.0, 1.0)
+            
             # Store results in session and redirect to results page
-            session['prediction_results'] = {
-                'prediction_value': response,
+            session['estimated_results'] = {
+                'estimated_value': response,
                 'model_description': model_desc,
                 'interpretation': interpretation,
                 'risk_level': risk_level,
-                'scaler_type': "MinMaxScaler" if decision_type == 'discharge' else "StandardScaler"
+                'scaler_type': "MinMaxScaler" if decision_type == 'discharge' else "StandardScaler",
+                'benchmark_value': benchmark_value,
+                'benchmark_label': benchmark_label,
+                'exceeds_benchmark': exceeds_benchmark,
+                'recommendation': recommendation,
+                'color_intensity': color_intensity
             }
             
-            print(f"DEBUG: Session data stored: {session.get('prediction_results')}")
+            print(f"DEBUG: Session data stored: {session.get('estimated_results')}")
             
             return redirect(url_for('show_results', 
                                   decision_type=decision_type, 
@@ -1658,13 +1883,13 @@ def predict(decision_type, threshold_set, model_index):
             print(f"❌ Unexpected error: {e}")
             import traceback
             traceback.print_exc()
-            flash(f"An error occurred during prediction: {e}", "error")
+            flash(f"An error occurred during estimation: {e}", "error")
 
     # Get field configurations and form sections based on decision type
     field_configs = get_field_configs(decision_type)
     form_sections = get_form_sections(decision_type)
     
-    return render_template_string(PREDICT_HTML_TEMPLATE, 
+    return render_template_string(ESTIMATE_HTML_TEMPLATE, 
                                   labels = labels, 
                                   model_index = model_index, 
                                   decision_type = decision_type,
@@ -1674,33 +1899,38 @@ def predict(decision_type, threshold_set, model_index):
 
 @app.route('/results/<decision_type>/<threshold_set>/<int:model_index>')
 def show_results(decision_type, threshold_set, model_index):
-    """Show prediction results page"""
+    """Show estimation results page"""
     # Get results from session
-    results = session.get('prediction_results', {})
+    results = session.get('estimated_results', {})
     
     print(f"DEBUG: Retrieved session data: {results}")
     print(f"DEBUG: Session keys: {list(session.keys())}")
     
     if not results:
         print("DEBUG: No results found in session!")
-        flash("No prediction results found. Please run the analysis again.", "error")
-        return redirect(url_for('predict', 
+        flash("No estimation results found. Please run the analysis again.", "error")
+        return redirect(url_for('estimate', 
                               decision_type=decision_type, 
                               threshold_set=threshold_set, 
                               model_index=model_index))
     
     # Don't clear the session data immediately - keep it for debugging
-    # session.pop('prediction_results', None)
+    # session.pop('estimated_results', None)
     
     return render_template_string(RESULTS_HTML_TEMPLATE,
                                 decision_type=decision_type,
                                 threshold_set=threshold_set,
                                 model_index=model_index,
-                                prediction_value=results.get('prediction_value', 0),
+                                estimated_value=results.get('estimated_value', 0),
                                 model_description=results.get('model_description', ''),
                                 interpretation=results.get('interpretation', ''),
                                 risk_level=results.get('risk_level', ''),
-                                scaler_type=results.get('scaler_type', ''))
+                                scaler_type=results.get('scaler_type', ''),
+                                benchmark_value=results.get('benchmark_value'),
+                                benchmark_label=results.get('benchmark_label'),
+                                exceeds_benchmark=results.get('exceeds_benchmark', False),
+                                recommendation=results.get('recommendation'),
+                                color_intensity=results.get('color_intensity', 0.0))
 
 if __name__ == '__main__':
     # Development environment run

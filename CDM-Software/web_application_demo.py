@@ -41,9 +41,11 @@ import os
 import pickle
 import pandas as pd
 import sys
-from interactive_support_1 import *
-# Import FQE class specifically to ensure model loading works
-from interactive_support_1 import FQE
+import glob
+from interactive_support_discharge import *
+from interactive_support_discharge import FQE as FQE_discharge
+import interactive_support_extubate
+from interactive_support_extubate import FQE as FQE_extubate
 
 # from dotenv import load_dotenv
 
@@ -56,24 +58,74 @@ PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 
 # Model file mapping based on decision type and threshold setting
 def get_model_files(decision_type, threshold_set):
-    """Get model files based on decision type and threshold setting"""
-    base_path = os.path.join(PROJECT_ROOT, 'Software_FQE_models', f'{decision_type}_decision_making', 'demo_pseudo_fqe_model', threshold_set)
-    
-    # Extract threshold number from threshold_set (e.g., "threshold_set_1" -> "1")
+    """Get model files based on decision type and threshold setting.
+    Tries the canonical path first, then fallback locations under the decision_making folder.
+    """
     threshold_num = threshold_set.split('_')[-1]
-    
-    if decision_type == 'discharge':
-        return [
-            os.path.join(base_path, f'disch_FQE_agent_obj_{threshold_num}.pth'),
-            os.path.join(base_path, f'disch_FQE_agent_con_rr_{threshold_num}.pth'),
-            os.path.join(base_path, f'disch_FQE_agent_con_los_{threshold_num}.pth'),
-        ]
-    elif decision_type == 'extubation':
-        return [
-            os.path.join(base_path, f'ext_FQE_agent_obj_{threshold_num}.pth'),
-            os.path.join(base_path, f'ext_FQE_agent_con_{threshold_num}.pth'),
-        ]
-    return []
+    decision_dir = os.path.join(PROJECT_ROOT, 'Software_FQE_models', f'{decision_type}_decision_making')
+
+    def build_paths(base_path):
+        if decision_type == 'discharge':
+            return [
+                os.path.join(base_path, f'disch_FQE_agent_obj_{threshold_num}.pth'),
+                os.path.join(base_path, f'disch_FQE_agent_con_rr_{threshold_num}.pth'),
+                os.path.join(base_path, f'disch_FQE_agent_con_los_{threshold_num}.pth'),
+            ]
+        elif decision_type == 'extubation':
+            return [
+                os.path.join(base_path, f'ext_FQE_agent_obj_{threshold_num}.pth'),
+                os.path.join(base_path, f'ext_FQE_agent_con_{threshold_num}.pth'),
+            ]
+        return []
+
+    # 1) Canonical path: .../decision_making/demo_pseudo_fqe_model/threshold_set_N/
+    base_path = os.path.join(decision_dir, 'demo_pseudo_fqe_model', threshold_set)
+    paths = build_paths(base_path)
+    if all(os.path.isfile(p) for p in paths):
+        return paths
+
+    # 2) Fallback: .../decision_making/threshold_set_N/
+    base_path_fallback = os.path.join(decision_dir, threshold_set)
+    paths_fallback = build_paths(base_path_fallback)
+    if all(os.path.isfile(p) for p in paths_fallback):
+        return paths_fallback
+
+    # 3) Fallback: .../decision_making/ (flat)
+    base_path_flat = decision_dir
+    paths_flat = build_paths(base_path_flat)
+    if all(os.path.isfile(p) for p in paths_flat):
+        return paths_flat
+
+    # 4) Search by pattern under decision_making (any subdir) for expected filenames
+    if decision_type == 'extubation':
+        obj_glob = os.path.join(decision_dir, '**', f'ext_FQE_agent_obj*{threshold_num}*.pth')
+        con_glob = os.path.join(decision_dir, '**', f'ext_FQE_agent_con*{threshold_num}*.pth')
+        obj_matches = sorted(glob.glob(obj_glob))
+        con_matches = sorted(glob.glob(con_glob))
+        if obj_matches and con_matches:
+            return [obj_matches[0], con_matches[0]]
+        # Without threshold in filename
+        obj_glob2 = os.path.join(decision_dir, '**', 'ext_FQE_agent_obj*.pth')
+        con_glob2 = os.path.join(decision_dir, '**', 'ext_FQE_agent_con*.pth')
+        obj_matches2 = sorted(glob.glob(obj_glob2))
+        con_matches2 = sorted(glob.glob(con_glob2))
+        if obj_matches2 and con_matches2:
+            return [obj_matches2[0], con_matches2[0]]
+    elif decision_type == 'discharge':
+        obj_glob = os.path.join(decision_dir, '**', f'disch_FQE_agent_obj*{threshold_num}*.pth')
+        rr_glob = os.path.join(decision_dir, '**', f'disch_FQE_agent_con_rr*{threshold_num}*.pth')
+        los_glob = os.path.join(decision_dir, '**', f'disch_FQE_agent_con_los*{threshold_num}*.pth')
+        o, rr, los = sorted(glob.glob(obj_glob)), sorted(glob.glob(rr_glob)), sorted(glob.glob(los_glob))
+        if o and rr and los:
+            return [o[0], rr[0], los[0]]
+        o2 = sorted(glob.glob(os.path.join(decision_dir, '**', 'disch_FQE_agent_obj*.pth')))
+        rr2 = sorted(glob.glob(os.path.join(decision_dir, '**', 'disch_FQE_agent_con_rr*.pth')))
+        los2 = sorted(glob.glob(os.path.join(decision_dir, '**', 'disch_FQE_agent_con_los*.pth')))
+        if o2 and rr2 and los2:
+            return [o2[0], rr2[0], los2[0]]
+
+    # Return canonical list so caller can show a clear "file not found" message
+    return build_paths(os.path.join(decision_dir, 'demo_pseudo_fqe_model', threshold_set))
 
 def get_patient_labels(decision_type):
     """
@@ -127,38 +179,42 @@ def get_patient_labels(decision_type):
             'Readmission Count'  # readmission_count
         ]
     elif decision_type == 'extubation':
-        # Extubation decision making: 30 variables
+        # Extubation decision making: 34 variables
         return [
-            'Age (years)',  # age
-            'Gender (Male=1, Female=0)',  # M
-            'Weight (kg)',  # weight
-            'Heart Rate (bpm)',  # Heart Rate
-            'Arterial O2 Pressure (mmHg)',  # Arterial O2 pressure
-            'Hemoglobin (g/dL)',  # Hemoglobin
-            'Arterial CO2 Pressure (mmHg)',  # Arterial CO2 Pressure
-            'Hematocrit (serum %)',  # Hematocrit (serum)
-            'White Blood Cell Count (WBC, x10^9/L)',  # WBC
-            'Chloride (serum, mEq/L)',  # Chloride (serum)
-            'Creatinine (serum, mg/dL)',  # Creatinine (serum)
-            'Glucose (serum, mg/dL)',  # Glucose (serum)
-            'Magnesium (mg/dL)',  # Magnesium
-            'Sodium (serum, mEq/L)',  # Sodium (serum)
-            'Arterial pH',  # PH (Arterial)
-            'Inspired Oxygen Fraction (FiO2, %)',  # Inspired O2 Fraction
-            'Arterial Base Excess (mmol/L)',  # Arterial Base Excess
-            'Blood Urea Nitrogen (BUN, mg/dL)',  # BUN
-            'Potassium (serum, mEq/L)',  # Potassium (serum)
-            'Bicarbonate (HCO3, mEq/L)',  # HCO3 (serum)
-            'Platelet Count (x10^9/L)',  # Platelet Count
-            'Systolic Blood Pressure (mmHg)',  # Blood Pressure Systolic
-            'Diastolic Blood Pressure (mmHg)',  # Blood Pressure Diastolic
-            'Mean Blood Pressure (mmHg)',  # Blood Pressure Mean
-            'Temperature (°C)',  # Temperature C
-            'Oxygen Saturation (SaO2, %)',  # SaO2
-            'Glasgow Coma Scale (GCS) Score',  # GCS score
-            'Positive End-Expiratory Pressure (PEEP, cmH2O)',  # PEEP
-            'Respiratory Rate (breaths/min)',  # Respiratory Rate
-            'Tidal Volume (L)',  # Tidal Volume
+            'Age (years)',  # 0: age
+            'Gender (Male=1, Female=0)',  # 1: M
+            'Weight (kg)',  # 2: weight
+            'Heart Rate (bpm)',  # 3: Heart Rate
+            'Arterial O2 Pressure (mmHg)',  # 4: Arterial O2 pressure
+            'Hemoglobin (g/dL)',  # 5: Hemoglobin
+            'Arterial CO2 Pressure (mmHg)',  # 6: Arterial CO2 Pressure
+            'Hematocrit (serum %)',  # 7: Hematocrit (serum)
+            'White Blood Cell Count (WBC, x10^9/L)',  # 8: WBC
+            'Chloride (serum, mEq/L)',  # 9: Chloride (serum)
+            'Creatinine (serum, mg/dL)',  # 10: Creatinine (serum)
+            'Glucose (serum, mg/dL)',  # 11: Glucose (serum)
+            'Magnesium (mg/dL)',  # 12: Magnesium
+            'Sodium (serum, mEq/L)',  # 13: Sodium (serum)
+            'Arterial pH',  # 14: PH (Arterial)
+            'Inspired Oxygen Fraction (FiO2, %)',  # 15: Inspired O2 Fraction
+            'Arterial Base Excess (mmol/L)',  # 16: Arterial Base Excess
+            'Blood Urea Nitrogen (BUN, mg/dL)',  # 17: BUN
+            'Ionized Calcium (mmol/L)',  # 18: Ionized Calcium
+            'Potassium (serum, mEq/L)',  # 19: Potassium (serum)
+            'Bicarbonate (HCO3, mEq/L)',  # 20: HCO3 (serum)
+            'Platelet Count (x10^9/L)',  # 21: Platelet Count
+            'Prothrombin Time (sec)',  # 22: Prothrombin time
+            'Partial Thromboplastin Time (PTT, sec)',  # 23: PTT
+            'International Normalized Ratio (INR)',  # 24: INR
+            'Systolic Blood Pressure (mmHg)',  # 25: Blood Pressure Systolic
+            'Diastolic Blood Pressure (mmHg)',  # 26: Blood Pressure Diastolic
+            'Mean Blood Pressure (mmHg)',  # 27: Blood Pressure Mean
+            'Temperature (°C)',  # 28: Temperature C
+            'Oxygen Saturation (SaO2, %)',  # 29: SaO2
+            'Glasgow Coma Scale (GCS) Score',  # 30: GCS score
+            'Positive End-Expiratory Pressure (PEEP, cmH2O)',  # 31: PEEP
+            'Respiratory Rate (breaths/min)',  # 32: Respiratory Rate
+            'Tidal Volume (L)',  # 33: Tidal Volume
         ]
     else:
         return []
@@ -215,7 +271,7 @@ def get_field_configs(decision_type):
             36: {'min': 0, 'max': 10, 'step': 1, 'placeholder': 'e.g.: 0'}
         }
     elif decision_type == 'extubation':
-        # Extubation decision making field configurations (30 fields)
+        # Extubation decision making field configurations (34 fields)
         return {
             0: {'min': 0, 'max': 120, 'step': 0.1, 'placeholder': 'e.g.: 65'},
             1: {'type': 'select'},
@@ -235,18 +291,22 @@ def get_field_configs(decision_type):
             15: {'min': 0, 'max': 500, 'step': 1, 'placeholder': 'e.g.: 40'},
             16: {'min': -100, 'max': 100, 'step': 0.1, 'placeholder': 'e.g.: -2'},
             17: {'min': 0, 'max': 500, 'step': 1, 'placeholder': 'e.g.: 25'},
-            18: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 4.0'},
-            19: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 24'},
-            20: {'min': 0, 'max': 500, 'step': 1, 'placeholder': 'e.g.: 250'},
-            21: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 120'},
-            22: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 70'},
-            23: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 90'},
-            24: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 36.5'},
-            25: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 98'},
-            26: {'min': 3, 'max': 15, 'step': 0.1, 'placeholder': 'e.g.: 10'},
-            27: {'min': 0, 'max': 25, 'step': 0.1, 'placeholder': 'e.g.: 5.0'},
-            28: {'min': 0, 'max': 100, 'step': 1, 'placeholder': 'e.g.: 18'},
-            29: {'min': 0, 'max': 2.0, 'step': 0.01, 'placeholder': 'e.g.: 0.45'}
+            18: {'min': 0, 'max': 500, 'step': 0.01, 'placeholder': 'e.g.: 1.15'},
+            19: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 4.0'},
+            20: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 24'},
+            21: {'min': 0, 'max': 500, 'step': 1, 'placeholder': 'e.g.: 250'},
+            22: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 12'},
+            23: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 35'},
+            24: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 1.2'},
+            25: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 120'},
+            26: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 70'},
+            27: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 90'},
+            28: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 36.5'},
+            29: {'min': 0, 'max': 500, 'step': 0.1, 'placeholder': 'e.g.: 98'},
+            30: {'min': 3, 'max': 15, 'step': 0.1, 'placeholder': 'e.g.: 10'},
+            31: {'min': 0, 'max': 25, 'step': 0.1, 'placeholder': 'e.g.: 5.0'},
+            32: {'min': 0, 'max': 100, 'step': 1, 'placeholder': 'e.g.: 18'},
+            33: {'min': 0, 'max': 2.0, 'step': 0.01, 'placeholder': 'e.g.: 0.45'}
         }
     else:
         return {}
@@ -275,11 +335,11 @@ def get_form_sections(decision_type):
     elif decision_type == 'extubation':
         return [
             {'name': 'Basic Information', 'icon': 'fa-user', 'indices': [0, 1, 2]},
-            {'name': 'Vital Signs', 'icon': 'fa-heartbeat', 'indices': [3, 21, 22, 23, 24, 25]},
-            {'name': 'Blood Tests - Hematology', 'icon': 'fa-tint', 'indices': [5, 7, 8, 20]},
-            {'name': 'Blood Tests - Chemistry Panel', 'icon': 'fa-flask', 'indices': [9, 10, 11, 12, 13, 17, 18, 19]},
+            {'name': 'Vital Signs', 'icon': 'fa-heartbeat', 'indices': [3, 25, 26, 27, 28, 29]},
+            {'name': 'Blood Tests - Hematology', 'icon': 'fa-tint', 'indices': [5, 7, 8, 21, 22, 23, 24]},
+            {'name': 'Blood Tests - Chemistry Panel', 'icon': 'fa-flask', 'indices': [9, 10, 11, 12, 13, 17, 18, 19, 20]},
             {'name': 'Blood Gas Analysis', 'icon': 'fa-lungs', 'indices': [4, 6, 14, 15, 16]},
-            {'name': 'Neurological & Respiratory', 'icon': 'fa-brain', 'indices': [26, 27, 28, 29]}
+            {'name': 'Neurological & Respiratory', 'icon': 'fa-brain', 'indices': [30, 31, 32, 33]}
         ]
     else:
         return []
@@ -300,37 +360,44 @@ app.secret_key = 'your-secret-key-here'
 # Global device variable
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# Custom unpickler to handle module mapping issues
-class CustomUnpickler(pickle.Unpickler):
-    def find_class(self, module, name):
-        # Remap __main__ module references to current module
-        if module == '__main__':
-            if name == 'FQE':
-                return FQE
-            # Try to find the class in interactive_support module
+# Load the trained model (handles models saved from __main__ in training scripts)
+def load_model(model_file_path, decision_type='discharge'):
+    if not os.path.isfile(model_file_path):
+        raise FileNotFoundError(f"Model file not found: {model_file_path}")
+    # Pick the module that matches the training script for this decision type.
+    # Discharge uses interactive_support_discharge, extubation uses interactive_support_extubate.
+    if decision_type == 'extubation':
+        module_candidates = ['interactive_support_extubate', 'interactive_support_discharge']
+    else:
+        module_candidates = ['interactive_support_discharge', 'interactive_support_extubate']
+    last_error = None
+    for module_name in module_candidates:
+        try:
+            if module_name not in sys.modules:
+                __import__(module_name)
+            script_module = sys.modules[module_name]
+            saved_main = sys.modules.get('__main__')
             try:
-                return getattr(sys.modules['interactive_support'], name)
-            except (AttributeError, KeyError):
-                pass
-        return super().find_class(module, name)
-
-# Load the trained model
-def load_model(model_file_path):
-    try:
-        # First try standard loading
-        model = torch.load(model_file_path, map_location = device, weights_only = False)
-        return model
-    except AttributeError as e:
-        if "Can't get attribute" in str(e):
-            print(f"⚠️  Standard loading failed: {e}")
-            print("🔄 Trying custom unpickler...")
-            # Try custom unpickler for models saved from __main__
-            with open(model_file_path, 'rb') as f:
-                model = CustomUnpickler(f).load()
-            print("✓ Successfully loaded model with custom unpickler")
-            return model
-        else:
+                sys.modules['__main__'] = script_module
+                model = torch.load(model_file_path, map_location = device, weights_only = False)
+                print(f"✓ Model loaded successfully (resolved __main__ via {module_name})")
+                return model
+            finally:
+                if saved_main is not None:
+                    sys.modules['__main__'] = saved_main
+                else:
+                    sys.modules.pop('__main__', None)
+        except (AttributeError, Exception) as e:
+            if "Can't get attribute" in str(e):
+                last_error = e
+                print(f"⚠️  Tried {module_name}: {e}")
+                continue
             raise e
+    if last_error:
+        raise RuntimeError(
+            "Model was saved from a script whose class definitions do not match "
+            "interactive_support_discharge or interactive_support_extubate."
+        ) from last_error
 
 # Load the saved scaler
 def load_scaler(decision_type):
@@ -403,17 +470,16 @@ def load_scaler(decision_type):
         else:
             # Create temporary StandardScaler for extubation
             temp_scaler = StandardScaler()
-            # For extubation: 29 features (30 total - gender at index 1)
-            # Features: age + indices 2-29 = 1 + 28 = 29 features
+            # For extubation: 33 features (34 total - gender at index 1)
+            # Features: age + indices 2-33 = 1 + 32 = 33 features
             dummy_data = np.array([
-                # Generate some sample data points for fitting (29 features)
-                # age, weight, HR, ArterialO2, Hgb, ArterialCO2, Hct, WBC, Cl, Cr, Glu, Mg, Na, pH, FiO2, BE, BUN, K, HCO3, Plt, SBP, DBP, MBP, Temp, SaO2, GCS score, PEEP, RR, TV(L)
-                [65, 75, 80, 95, 12, 40, 38, 8, 102, 1.2, 110, 2.0, 140, 7.4, 40, -2, 25, 4.0, 24, 250, 120, 70, 90, 36.5, 98, 10.0, 5.0, 18, 0.45],
-                [70, 85, 90, 100, 14, 45, 40, 9, 105, 1.3, 120, 2.2, 142, 7.42, 45, -1, 30, 4.2, 26, 280, 130, 75, 95, 37.0, 99, 8.0, 6.0, 20, 0.50],
-                [60, 70, 85, 90, 11, 35, 36, 7, 100, 1.1, 100, 1.8, 138, 7.38, 35, -3, 20, 3.8, 22, 220, 110, 65, 85, 36.0, 97, 12.0, 4.0, 16, 0.40]
+                # 33 features: age, weight, HR, ArterialO2, Hgb, ArterialCO2, Hct, WBC, Cl, Cr, Glu, Mg, Na, pH, FiO2, BE, BUN, Ca, K, HCO3, Plt, PT, PTT, INR, SBP, DBP, MBP, Temp, SaO2, GCS, PEEP, RR, TV
+                [65, 75, 80, 95, 12, 40, 38, 8, 102, 1.2, 110, 2.0, 140, 7.4, 40, -2, 25, 1.15, 4.0, 24, 250, 12.0, 35.0, 1.2, 120, 70, 90, 36.5, 98, 10.0, 5.0, 18, 0.45],
+                [70, 85, 90, 100, 14, 45, 40, 9, 105, 1.3, 120, 2.2, 142, 7.42, 45, -1, 30, 1.20, 4.2, 26, 280, 13.0, 38.0, 1.3, 130, 75, 95, 37.0, 99, 8.0, 6.0, 20, 0.50],
+                [60, 70, 85, 90, 11, 35, 36, 7, 100, 1.1, 100, 1.8, 138, 7.38, 35, -3, 20, 1.10, 3.8, 22, 220, 11.0, 32.0, 1.1, 110, 65, 85, 36.0, 97, 12.0, 4.0, 16, 0.40]
             ])
             temp_scaler.fit(dummy_data)
-            print(f"✓ Temporary StandardScaler created for extubation decision making (29 features)")
+            print(f"✓ Temporary StandardScaler created for extubation decision making (33 features)")
         
         return temp_scaler, None
         
@@ -1089,7 +1155,7 @@ DECISION_TYPE_HTML_TEMPLATE = """
                         This model evaluates respiratory function and overall patient stability for safe extubation.
                     </p>
                     <div class="mt-3">
-                        <span class="badge badge-primary">Available Models: 3</span>
+                        <span class="badge badge-primary">Available Models: 2</span>
                         <span class="badge badge-info">Threshold Sets: 2</span>
                     </div>
                 </div>
@@ -1673,7 +1739,12 @@ def estimate(decision_type, threshold_set, model_index):
         flash("Invalid model selection", "error")
         return redirect(url_for('model_selection', decision_type = decision_type, threshold_set = threshold_set))
     
-    model = load_model(model_files[model_index])
+    model_file_path = model_files[model_index]
+    if not os.path.isfile(model_file_path):
+        flash(f"Model file not found. Please ensure the FQE model file is available at: {os.path.basename(model_file_path)}", "error")
+        return redirect(url_for('model_selection', decision_type = decision_type, threshold_set = threshold_set))
+    
+    model = load_model(model_file_path, decision_type)
     
     # Load the pre-trained scaler from training phase
     # Note: This loads the appropriate scaler type based on decision type
@@ -1732,10 +1803,10 @@ def estimate(decision_type, threshold_set, model_index):
                 
             elif decision_type == 'extubation':
                 print('🫁 Processing EXTUBATION decision...')
-                # For extubation: exclude only gender (index 1), no readmission count
+                # For extubation: exclude only gender (index 1) -> 33 features to scale
                 features_to_scale = np.concatenate([
                     all_features[:, :1],      # age (index 0)
-                    all_features[:, 2:]       # indices 2-29 (medical indicators)
+                    all_features[:, 2:]       # indices 2-33 (medical indicators)
                 ], axis = 1)
                 print(f"📊 Features to scale shape: {features_to_scale.shape}")
                 

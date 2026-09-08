@@ -23,6 +23,7 @@ appropriate local validation, governance, regulatory review, and clinician
 oversight.
 
 The current PyPI and GitHub release is **1.1.0**.
+See [`CHANGELOG.md`](CHANGELOG.md) for release details.
 
 ## What is included in version 1.1.0
 
@@ -295,6 +296,22 @@ trainer = RLTraining(
 
 This component is provided for methodological research. It has not been
 validated for autonomous clinical control.
+
+## Example notebooks
+
+The `Experiment Notebook` directory includes:
+
+- `Example_ConMedRL_End_to_End_Workflow.ipynb`: canonical 1.1.0 workflow.
+- `Case_ICU_Discharge_Decision_Making.ipynb` and
+  `Case_ICU_Extubation_Decision_Making.ipynb`: application workflows.
+- `Example_Generic_MIMIC_Like_NWICU.ipynb` and
+  `Example_LLM_Custom_Clinical_Task.ipynb`: reviewed generic-data workflows.
+- `Example_FHIR_R4_Interop.ipynb` and
+  `Example_Exact_Machine_Unlearning.ipynb`: interoperability and withdrawal.
+- `package_installation_test.ipynb`: PyPI 1.1.0 installation verification.
+
+The remaining variable-search and `data_preprocess.py` notebooks document the
+legacy compatibility path.
 
 ## Data sources
 

@@ -14,8 +14,11 @@ Docker-Deployment/
 ├── docker-compose.prod.yml      # Production environment with monitoring
 ├── .dockerignore               # Docker ignore file
 ├── nginx.conf                  # Nginx configuration for production
+├── monitoring/
+│   ├── prometheus.yml          # Prometheus configuration
+│   └── grafana/datasources/    # Grafana Prometheus data source
 ├── DOCKER_VALIDATION_GUIDE.md  # Complete validation guide
-├── scripts/
+└── scripts/
 │   ├── build.sh               # Build script (Linux/Mac)
 │   ├── build.bat              # Build script (Windows)
 │   ├── build_research.sh      # Research environment build script
@@ -23,9 +26,6 @@ Docker-Deployment/
 │   ├── test_deployment.sh     # Deployment test script
 │   ├── test_deployment.bat    # Deployment test script (Windows)
 │   └── cleanup.sh             # Cleanup script
-└── env/
-    ├── .env.example           # Environment variables example
-    └── .env.production        # Production environment variables
 ```
 
 ## Quick Start
@@ -126,11 +126,9 @@ bundle = build_dataset(
 ```
 
 #### Running Flask Application
-```python
-# Start the clinical decision support system
-from CDM_Software.web_application_demo import app
-
-app.run(host='0.0.0.0', port=5000)
+```bash
+cd /app/CDM-Software
+python web_application_demo.py
 ```
 
 ## Configuration Options

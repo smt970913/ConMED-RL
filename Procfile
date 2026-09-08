@@ -1,1 +1,1 @@
-web: gunicorn web_application_test:create_app
+web: gunicorn --chdir CDM-Software web_application_demo:create_app

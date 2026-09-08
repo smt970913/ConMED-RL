@@ -86,12 +86,10 @@ print(bundle.summary())
 
 ### Using CDM-Software
 
-```python
-# Start clinical decision support system
-from CDM_Software.web_application_demo import app
-app.run(host='0.0.0.0', port=5000)
-
-# Or access directly at http://localhost:5000
+```bash
+cd /app/CDM-Software
+python web_application_demo.py
+# Access at http://localhost:5000
 ```
 
 ## 📁 File Structure in Docker

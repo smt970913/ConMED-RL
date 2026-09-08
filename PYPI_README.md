@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![PyPI version](https://badge.fury.io/py/conmedrl.svg)](https://badge.fury.io/py/conmedrl)
+[![PyPI version](https://badge.fury.io/py/conmedrl.svg)](https://pypi.org/project/conmedrl/)
 
 **ConMED-RL** is an **Offline Constrained Reinforcement Learning (OCRL)**
 toolkit for retrospective critical-care research. It combines ICU data
@@ -26,71 +26,57 @@ pip install conmedrl
 # Optional d3rlpy/Parquet or LLM integrations
 pip install "conmedrl[data]"
 pip install "conmedrl[llm]"
+pip install "conmedrl[data,llm]"
 ```
 
 ### Basic Usage
-- Configure training
-```python
-from ConMedRL import RLConfigurator
-
-dm_configuration = RLConfigurator()
-dm_configuration.choose_config_method()
-dm_configuration.config.memory_capacity
-```
-
-- Load data into the training procedure (discharge decision-making case)
 
 ```python
-from ConMedRL import FQE, FQI, TrainDataLoader, ValTestDataLoader
+from ConMedRL import (
+    RLConfigurator,
+    RLTraining,
+    TrainDataLoader,
+    ValTestDataLoader,
+    build_dataset,
+)
 
-# Load your clinical data
-train_data_loader = TrainDataLoader(cfg = dm_configuration.config, 
-                                    outcome_table = outcome_table_train, 
-                                    state_var_table = state_var_table, 
-                                    terminal_state = terminal_state)
+configuration = RLConfigurator()
+configuration.choose_config_method()
+rl_config = configuration.config
 
-train_data_loader.data_buffer_train(action_name = 'discharge_action', 
-                                    done_condition = None,
-                                    num_constraint = 2)
+bundle = build_dataset(
+    database="mimic-iv",
+    task="discharge",
+    data_dir="/path/to/mimic-iv",
+    output_dir="./processed",
+    output_formats=("csv",),
+)
 
-val_data_loader = ValTestDataLoader(cfg = dm_configuration.config, 
-                                    outcome_table_select = outcome_table_val_select, 
-                                    state_var_table_select = state_var_table_val_select, 
-                                    outcome_table = outcome_table_val, 
-                                    state_var_table = state_var_table_val, 
-                                    terminal_state = terminal_state)
+train_loader = TrainDataLoader(cfg=rl_config, **bundle.loader_kwargs("train"))
+train_loader.data_buffer_train(
+    action_name=bundle.loader_action,
+    done_condition=None,
+    num_constraint=bundle.num_constraints,
+)
 
-val_data_loader.data_buffer(action_name = 'discharge_action', 
-                            done_condition = None,
-                            num_constraint = 2)
+val_loader = ValTestDataLoader(cfg=rl_config, **bundle.loader_kwargs("val"))
+val_loader.data_buffer(
+    action_name=bundle.loader_action,
+    done_condition=None,
+    num_constraint=bundle.num_constraints,
+)
+
+trainer = RLTraining(
+    cfg=rl_config,
+    state_dim=bundle.state_dim,
+    action_dim=bundle.action_dim,
+    train_data_loader=train_loader.data_torch_loader_train,
+    val_data_loader=val_loader.data_torch_loader,
+)
 ```
 
-- Initialize the training of OCRL-based policy learning framework (discharge decision-making case)
-```python
-# Set the training of the model
-ocrl_training = RLTraining(cfg = dm_configuration.config, 
-                           state_dim = state_var_table.shape[1], 
-                           action_dim = 2, 
-                           train_data_loader = train_data_loader.data_torch_loader_train,
-                           val_data_loader = val_data_loader.data_torch_loader)
-
-# Building the FQI agent
-fqi_agent = ocrl_training.fqi_agent_config(...) 
-
-# Building the FQE agents
-fqe_agent_obj = ocrl_training.fqe_agent_config(...) 
-
-fqe_agent_con_0 = ocrl_training.fqe_agent_config(...) 
-
-fqe_agent_con_1 = ocrl_training.fqe_agent_config(...) 
-
-ocrl_training.train(agent_fqi = fqi_agent, 
-                    agent_fqe_obj = fqe_agent_obj, 
-                    agent_fqe_con_list = [fqe_agent_con_0, fqe_agent_con_1], 
-                    constraint = True,
-                    save_num = 100,
-                    z_value = 1.96)
-```
+See the end-to-end notebook for FQI/FQE configuration, multiplier updates, and
+held-out evaluation.
 
 ## 📦 Core Components
 

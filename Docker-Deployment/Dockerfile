@@ -18,8 +18,8 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy requirements and install Python dependencies
-COPY ../requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 # Production stage
 FROM python:3.10-slim as production
@@ -34,7 +34,7 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean
 
 # Copy Python packages from builder stage
-COPY --from=builder /root/.local /root/.local
+COPY --from=builder /install /usr/local
 
 # Create non-root user early
 RUN groupadd -r appuser && useradd -r -g appuser appuser
@@ -46,7 +46,6 @@ WORKDIR /app
 ENV PYTHONPATH=/app \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PATH=/root/.local/bin:$PATH \
     FLASK_APP=CDM-Software/web_application_demo.py \
     FLASK_ENV=production \
     WORKERS=2 \
@@ -54,12 +53,15 @@ ENV PYTHONPATH=/app \
     LOG_LEVEL=INFO
 
 # Copy application files with proper ownership
-COPY --chown=appuser:appuser ../ConMedRL ./ConMedRL/
-COPY --chown=appuser:appuser ../CDM-Software ./CDM-Software/
-COPY --chown=appuser:appuser ../Software_FQE_models ./Software_FQE_models/
-COPY --chown=appuser:appuser ../image ./image/
-COPY --chown=appuser:appuser ../Data ./Data/
-COPY --chown=appuser:appuser ../Experiment\ Notebook ./Experiment\ Notebook/
+COPY --chown=appuser:appuser ConMedRL ./ConMedRL/
+COPY --chown=appuser:appuser CDM-Software ./CDM-Software/
+COPY --chown=appuser:appuser Software_FQE_models.zip ./Software_FQE_models.zip
+COPY --chown=appuser:appuser image ./image/
+COPY --chown=appuser:appuser Data ./Data/
+COPY --chown=appuser:appuser Experiment\ Notebook ./Experiment\ Notebook/
+
+RUN python -m zipfile -e Software_FQE_models.zip /app && \
+    rm Software_FQE_models.zip
 
 # Create necessary directories
 RUN mkdir -p /app/logs /app/temp && \

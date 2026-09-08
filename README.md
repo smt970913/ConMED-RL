@@ -370,6 +370,13 @@ The extubation study, *Personalized Extubation Decisions under Resource
 Constraints: An Offline Constrained Reinforcement Learning Approach*, is under
 major revision at *Health Care Management Science*.
 
+## AI assistance statement
+
+This project was developed in the Cursor development environment. Cursor's
+Agent was used to assist with debugging and the formatting of documentation.
+The maintainers reviewed the resulting changes and remain responsible for the
+project's code, documentation, and scientific content.
+
 ## License and contact
 
 ConMED-RL is released under the [MIT License](LICENSE).

@@ -31,8 +31,8 @@ curl --version
 
 ```bash
 # Clone repository
-git clone https://github.com/your-username/ICU-Decision-Making-OCRL.git
-cd ICU-Decision-Making-OCRL/Docker-Deployment
+git clone https://github.com/smt970913/ConMED-RL.git
+cd ConMED-RL/Docker-Deployment
 
 # Linux/Mac
 chmod +x scripts/test_deployment.sh
@@ -46,7 +46,7 @@ scripts\test_deployment.bat
 
 #### Step 1: Verify Configuration Files
 ```bash
-cd ICU-Decision-Making-OCRL/Docker-Deployment
+cd ConMED-RL/Docker-Deployment
 
 # Verify docker-compose syntax
 docker-compose config

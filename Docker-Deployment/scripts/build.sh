@@ -53,7 +53,7 @@ docker-compose down 2>/dev/null || true
 docker system prune -f
 
 echo ""
-print_status "Step 2: Building ConCare-RL Docker image..."
+print_status "Step 2: Building ConMED-RL Docker image..."
 if docker-compose build --no-cache; then
     echo ""
     echo -e "${GREEN}========================================${NC}"

@@ -234,7 +234,7 @@ def index():
 
     # Load image and convert to base64 for HTML rendering
     try:
-        img = Image.open(os.path.join(PROJECT_ROOT, 'image', 'ConCare-RL Logo.png'))
+        img = Image.open(os.path.join(PROJECT_ROOT, 'image', 'ConMED-RL Logo.png'))
         
         # Convert RGBA to RGB if necessary (PNG with transparency)
         if img.mode in ('RGBA', 'LA', 'P'):

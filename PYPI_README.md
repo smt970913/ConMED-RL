@@ -12,6 +12,8 @@ research-interface examples.
 
 This toolkit builds upon our research on OCRL applications in critical care: a published study in *IISE Transactions on Healthcare Systems Engineering* addressing ICU discharge decision-making, and ongoing work under revision in *Health Care Management Science* on ICU extubation decision-making.
 
+Current release: **1.1.0**.
+
 ## 🚀 Quick Start
 
 ### Installation
@@ -26,10 +28,10 @@ pip install "conmedrl[data]"
 pip install "conmedrl[llm]"
 ```
 
-### Brief Usage Instruction
-- Set Hyparameter
+### Basic Usage
+- Configure training
 ```python
-from ConMedRL import RLConfigurator, RLConfig_custom 
+from ConMedRL import RLConfigurator
 
 dm_configuration = RLConfigurator()
 dm_configuration.choose_config_method()
@@ -172,7 +174,7 @@ This toolkit is based on research published in academic journals. If you use Con
   title        = {ConMED-RL: An OCRL-Based Toolkit for Medical Decision Support},
   year         = {2025},
   howpublished = {\url{https://github.com/smt970913/ConMED-RL}},
-  note         = {Accessed: xxxx-xx-xx},
+  note         = {Version 1.1.0},
 }
 ```
 
@@ -184,7 +186,8 @@ This toolkit is based on research published in academic journals. If you use Con
 - Pandas
 - scikit-learn
 
-All dependencies are automatically installed with the package.
+Core dependencies are installed with the package. Optional data and LLM
+integrations use the `data` and `llm` extras shown above.
 
 ## 📝 License
 

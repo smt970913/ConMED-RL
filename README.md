@@ -22,6 +22,8 @@ is not a medical device and must not be used to direct patient care without
 appropriate local validation, governance, regulatory review, and clinician
 oversight.
 
+The current PyPI and GitHub release is **1.1.0**.
+
 ## What is included in version 1.1.0
 
 - A unified `ConMedRL.data.build_dataset` API for MIMIC-IV and SICdb.

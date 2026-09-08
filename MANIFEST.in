@@ -31,6 +31,6 @@ prune model_output
 prune models
 prune build
 prune dist
-prune concarerl.egg-info
+prune ConMedRL.egg-info
 prune .git
-prune .idea 
+prune .idea

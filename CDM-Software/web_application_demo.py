@@ -658,7 +658,7 @@ WELCOME_HTML_TEMPLATE = """
         
         <div class="mt-4">
             <small class="text-muted">
-                ConMED-RL © 2025 | ICU Decision Making Support System
+                ConMED-RL © 2025–2026 | ICU Decision Making Support System
             </small>
         </div>
     </div>
@@ -1433,7 +1433,7 @@ RESULTS_HTML_TEMPLATE = """
         
         <div class="mt-4 text-center">
             <small class="text-muted">
-                ConMED-RL © 2025 | FQE-Based ICU Decision Support System
+                ConMED-RL © 2025–2026 | FQE-Based ICU Decision Support System
             </small>
         </div>
     </div>

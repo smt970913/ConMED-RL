@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Build and package ConCare-RL for distribution
+Build and package ConMED-RL for distribution.
 """
 
 import os
@@ -48,10 +48,9 @@ def clean_build():
 
 def build_package():
     """Build the package"""
-    print("Building ConCare-RL package...")
+    print("Building ConMED-RL package...")
     
-    # Build using both methods for compatibility
-    run_command("python setup.py sdist bdist_wheel", "Building with setup.py")
+    # pyproject.toml is the single source of package metadata.
     run_command("python -m build", "Building with pyproject.toml")
     
     print("✓ Package built successfully")
@@ -92,8 +91,11 @@ def test_install():
     else:  # Unix/Linux/Mac
         python_cmd = "test_env/bin/python"
     
-    run_command(f"{python_cmd} -c \"import ConMedRL; print('ConMedRL imported successfully')\"", 
-                "Testing import")
+    run_command(
+        f"{python_cmd} -c \"import ConMedRL; "
+        "print(f'ConMedRL {ConMedRL.__version__} imported successfully')\"",
+        "Testing import",
+    )
     
     # Cleanup test environment
     shutil.rmtree("test_env")
@@ -102,23 +104,21 @@ def test_install():
 
 def publish_package(test=True):
     """Publish package to PyPI"""
-    repository = "testpypi" if test else "pypi"
-    
     print(f"Publishing to {'Test ' if test else ''}PyPI...")
     
     if test:
         run_command("python -m twine upload --repository testpypi dist/*", 
                    "Uploading to Test PyPI")
         print("\n✓ Package uploaded to Test PyPI")
-        print("Install with: pip install --index-url https://test.pypi.org/simple/ concarerl")
+        print("Install with: pip install --index-url https://test.pypi.org/simple/ conmedrl")
     else:
         run_command("python -m twine upload dist/*", "Uploading to PyPI")
         print("\n✓ Package uploaded to PyPI")
-        print("Install with: pip install concarerl")
+        print("Install with: pip install conmedrl")
 
 def main():
     """Main function"""
-    print("ConCare-RL Package Builder")
+    print("ConMED-RL Package Builder")
     print("=" * 50)
     
     if len(sys.argv) > 1:

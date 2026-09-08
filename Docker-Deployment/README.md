@@ -87,7 +87,8 @@ docker-compose -f docker-compose.prod.yml up --build -d
 
 ### ✅ Included Components
 - **ConMedRL** - Core OCRL framework (`/app/ConMedRL/`)
-- **Data** - Data processing modules (`/app/Data/`)
+- **ConMedRL.data** - Unified data processing API (`/app/ConMedRL/data/`)
+- **Data** - Legacy compatibility package (`/app/Data/`)
 - **CDM-Software** - Clinical decision support (`/app/CDM-Software/`)
 - **Experiment Notebook** - Jupyter notebooks (`/app/Experiment Notebook/`)
 - **Software_FQE_models** - Trained models (`/app/Software_FQE_models/`)
@@ -100,20 +101,28 @@ docker-compose -f docker-compose.prod.yml up --build -d
 import sys
 sys.path.append('/app')
 
-from ConMedRL.conmedrl import FQI, FQE
-from ConMedRL.data_loader import DataLoader
-from Data.mimic_iv_icu_discharge.data_preprocess import preprocess_data
+from ConMedRL import FQE, FQI, build_dataset
 
-# Your code here...
+bundle = build_dataset(
+    database="mimic-iv",
+    task="discharge",
+    data_dir="/app/clinical_data/mimic-iv",
+    output_dir="/app/outputs/processed",
+    output_formats=("csv",),
+)
+print(bundle.summary())
 ```
 
 #### Using Data Processing
 ```python
-# Load and preprocess data
-from Data.mimic_iv_icu_discharge.data_preprocess import preprocess_data
+from ConMedRL import build_dataset
 
-# Process your data
-processed_data = preprocess_data('/app/Data/raw_data.csv')
+bundle = build_dataset(
+    database="mimic-iv",
+    task="extubation",
+    data_dir="/app/clinical_data/mimic-iv",
+    output_dir="/app/outputs/extubation",
+)
 ```
 
 #### Running Flask Application

@@ -47,7 +47,7 @@ train_loader = TrainDataLoader(
 )
 train_loader.data_buffer_train(
     action_name=bundle.loader_action,
-    done_condition=True,
+    done_condition=None,
     num_constraint=bundle.num_constraints,
 )
 
@@ -57,6 +57,7 @@ val_loader = ValTestDataLoader(
 )
 val_loader.data_buffer(
     action_name=bundle.loader_action,
+    done_condition=None,
     num_constraint=bundle.num_constraints,
 )
 ```

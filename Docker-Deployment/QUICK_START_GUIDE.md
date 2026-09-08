@@ -63,20 +63,16 @@ docker-compose -f docker-compose.prod.yml up --build -d
 import sys
 sys.path.append('/app')
 
-# Import core modules
-from ConMedRL.conmedrl import FQI, FQE
-from ConMedRL.data_loader import DataLoader
+from ConMedRL import FQE, FQI, build_dataset
 
-# Import data processing modules
-from Data.mimic_iv_icu_discharge.data_preprocess import preprocess_data
-
-# Usage example
-data_loader = DataLoader()
-fqi_agent = FQI()
-fqe_agent = FQE()
-
-# Data preprocessing
-processed_data = preprocess_data('/app/Data/raw_data.csv')
+bundle = build_dataset(
+    database="mimic-iv",
+    task="discharge",
+    data_dir="/app/clinical_data/mimic-iv",
+    output_dir="/app/outputs/processed",
+    output_formats=("csv",),
+)
+print(bundle.summary())
 ```
 
 ### Running Experiment Notebook
@@ -105,8 +101,9 @@ app.run(host='0.0.0.0', port=5000)
 ├── ConMedRL/                    # Core OCRL framework
 │   ├── conmedrl.py             # Main algorithm implementation
 │   ├── conmedrl_continuous.py  # Continuous action space
-│   └── data_loader.py          # Data loader
-├── Data/                        # Data processing modules
+│   ├── data_loader.py          # PyTorch transition loaders
+│   └── data/                   # Unified data processing API
+├── Data/                        # Legacy compatibility package
 │   ├── mimic_iv_icu_discharge/
 │   ├── mimic_iv_icu_extubation/
 │   └── SICdb_*/

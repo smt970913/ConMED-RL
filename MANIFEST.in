@@ -1,5 +1,6 @@
 include README.md
 include PYPI_README.md
+include DATA_PROCESSING.md
 include LICENSE
 include requirements.txt
 

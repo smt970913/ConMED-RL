@@ -112,8 +112,10 @@ ocrl_training.train(agent_fqi = fqi_agent,
 - Auditable patient withdrawal with dataset/model version tracking,
   stale-model rejection, and caller-controlled fresh retraining
 
-See `DATA_PROCESSING.md` and the generic-data, FHIR, and exact-unlearning
-example notebooks for the full safety and interoperability contract.
+See
+[`DATA_PROCESSING.md`](https://github.com/smt970913/ConMED-RL/blob/main/DATA_PROCESSING.md)
+and the generic-data, FHIR, and exact-unlearning example notebooks for the full
+safety and interoperability contract.
 
 ## 🏥 Key Features
 

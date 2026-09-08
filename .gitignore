@@ -148,5 +148,13 @@ logs/
 # Medical data (privacy protection)
 *.csv
 *.json
+!ConMedRL/data/profiles/*.json
 patient_data/
-clinical_data/ 
+clinical_data/
+
+# Local manuscript and generated workflow outputs
+Manuscript_ConMED_RL_Toolkit/
+Manuscript_ConMED_RL_Toolkit.zip
+AuthorKit27/
+workflow_output/
+Experiment Notebook/Generate_Manuscript_Figures.ipynb

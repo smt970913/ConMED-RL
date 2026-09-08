@@ -16,6 +16,17 @@ import datetime
 import math
 from pathlib import Path
 
+try:
+    from .model_artifacts import (
+        create_model_artifact_manifest,
+        set_deterministic_seed,
+    )
+except ImportError:  # Support legacy direct module imports.
+    from model_artifacts import (
+        create_model_artifact_manifest,
+        set_deterministic_seed,
+    )
+
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -488,7 +499,7 @@ class ReplayBuffer:
         capacity (int): Maximum number of transitions to store
     """
     
-    def __init__(self, capacity: int) -> None:
+    def __init__(self, capacity: int, seed: Optional[int] = None) -> None:
         """
         Initialize the replay buffer.
         
@@ -498,6 +509,11 @@ class ReplayBuffer:
         self.capacity = capacity
         self.buffer: List[Tuple[Any, Any, Any, List[Any], Any, Any]] = []
         self.position = 0
+        self._rng = random.Random(seed) if seed is not None else random
+
+    def set_seed(self, seed: int) -> None:
+        """Reset replay sampling to a deterministic sequence."""
+        self._rng = random.Random(int(seed))
 
     def push(self, 
              state: Any, 
@@ -536,7 +552,7 @@ class ReplayBuffer:
         Returns:
             Tuple containing batched states, actions, objective costs, constraint costs, next states, and done flags
         """
-        batch = random.sample(self.buffer, batch_size)
+        batch = self._rng.sample(self.buffer, batch_size)
         state, action, obj_cost, con_cost, next_state, done = zip(*batch)
 
         con_cost = [list(costs) for costs in zip(*con_cost)]
@@ -624,8 +640,7 @@ class FQE:
         self.target_net = FCN_fqe(input_dim, output_dim, hidden_layers, 
                                   cfg.activation_function_fqe, cfg.activation_params_fqe).to(self.device)
 
-        for target_param, param in zip(self.target_net.parameters(), self.policy_net.parameters()):
-            target_param.data.copy_(param.data)
+        self.target_net.load_state_dict(self.policy_net.state_dict())
 
         if hidden_layers is None:
             self.optimizer = optim.SGD(self.policy_net.parameters(), lr = self.lr_fqe)
@@ -657,14 +672,20 @@ class FQE:
             float: Loss value after update
         """
         # We need to evaluate the parameterized policy derived by the actor
-        policy_action_batch = self.eval_agent.rl_policy(next_state_batch, use_para = 'policy')
+        with torch.no_grad():
+            policy_action_batch = self.eval_agent.rl_policy(
+                next_state_batch, use_para="policy"
+            )
 
         # predicted Q-value using policy Q-network
         q_values = self.policy_net(state_action_batch)
 
         # target Q-value calculated by target Q-network
-        next_state_action_batch = torch.cat((next_state_batch, policy_action_batch), dim = 1)
-        next_q_values = self.target_net(next_state_action_batch)
+        with torch.no_grad():
+            next_state_action_batch = torch.cat(
+                (next_state_batch, policy_action_batch), dim=1
+            )
+            next_q_values = self.target_net(next_state_action_batch).squeeze(1)
 
         expected_q_values = cost_batch + self.gamma * next_q_values * (1 - done_batch)
 
@@ -673,13 +694,14 @@ class FQE:
         # Update Q-network by minimizing the above loss function
         self.optimizer.zero_grad()
         loss.backward()
-        for param in self.policy_net.parameters():
-            param.grad.data.clamp_(-1, 1)
+        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 1.0)
         self.optimizer.step()
 
         return loss.item()
     
-    def avg_Q_value_est(self, state_batch: torch.Tensor, z_value: float) -> Tuple[float, float]:
+    def avg_Q_value_est(
+        self, state_batch: torch.Tensor, z_value: float
+    ) -> Tuple[float, float, float]:
         """
         Estimate average Q-value and confidence bound for a batch of states.
         
@@ -690,18 +712,22 @@ class FQE:
         Returns:
             Tuple[float, float, float]: Mean Q-value, upper confidence bound, and lower confidence bound
         """
-        policy_action_batch = self.eval_agent.rl_policy(state_batch, use_para = 'policy')
-
-        state_action_batch = torch.cat((state_batch, policy_action_batch), dim = 1)
-        
-        q_values = self.policy_net(state_action_batch)
+        with torch.no_grad():
+            policy_action_batch = self.eval_agent.rl_policy(
+                state_batch, use_para="policy"
+            )
+            state_action_batch = torch.cat(
+                (state_batch, policy_action_batch), dim=1
+            )
+            q_values = self.policy_net(state_action_batch)
 
         q_mean = q_values.mean()
-        q_std = q_values.std()
+        q_std = q_values.std(unbiased=False)
         n = q_values.shape[0]
     
         if n <= 1 or q_std == 0:
-            return q_mean.item(), q_mean.item()
+            value = q_mean.item()
+            return value, value, value
     
         z = z_value  
         q_upper_bound = q_mean + z * (q_std / math.sqrt(n))
@@ -759,8 +785,7 @@ class Critic:
         self.target_net = FCN_critic(input_dim, output_dim, hidden_layers,
                                  cfg.activation_function_critic, cfg.activation_params_critic).to(self.device)
 
-        for target_param, param in zip(self.target_net.parameters(), self.policy_net.parameters()):
-            target_param.data.copy_(param.data)
+        self.target_net.load_state_dict(self.policy_net.state_dict())
 
         if hidden_layers is None:
             self.optimizer = optim.SGD([
@@ -798,14 +823,24 @@ class Critic:
         self.actor_agent = actor_agent
 
         q_values = self.policy_net(state_action_batch)
-        next_action_batch = self.actor_agent.rl_policy(next_state_batch, use_para = 'target')
-        next_state_action_batch = torch.cat((next_state_batch, next_action_batch), dim = 1)
-        next_q_values = self.target_net(next_state_action_batch)
+        with torch.no_grad():
+            next_action_batch = self.actor_agent.rl_policy(
+                next_state_batch, use_para="target"
+            )
+            next_state_action_batch = torch.cat(
+                (next_state_batch, next_action_batch), dim=1
+            )
+            next_q_values = self.target_net(next_state_action_batch).squeeze(1)
 
         sum_con_cost = 0
-        for i in range(len(lambda_t_list)):
-            lambda_t = lambda_t_list[i]
-            sum_con_cost += lambda_t * con_cost_batch[i]
+        if len(lambda_t_list) < len(con_cost_batch):
+            raise ValueError(
+                "Expected at least {0} Lagrange multipliers, got {1}".format(
+                    len(con_cost_batch), len(lambda_t_list)
+                )
+            )
+        for lambda_t, con_cost in zip(lambda_t_list, con_cost_batch):
+            sum_con_cost += lambda_t * con_cost
 
         expected_q_values = (obj_cost_batch + sum_con_cost) + self.gamma * next_q_values * (1 - done_batch)
 
@@ -813,8 +848,7 @@ class Critic:
 
         self.optimizer.zero_grad()
         loss.backward()
-        for param in self.policy_net.parameters():
-            param.grad.data.clamp_(-1, 1)
+        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 1.0)
         self.optimizer.step()
 
         return loss.item()
@@ -829,9 +863,12 @@ class Critic:
         Returns:
             float: Average Q-value
         """
-        action_pred_batch = self.actor_agent.rl_policy(state_batch, use_para = 'policy')
-        state_action_batch = torch.cat((state_batch, action_pred_batch), dim = 1)
-        q_values = self.policy_net(state_action_batch)
+        with torch.no_grad():
+            action_pred_batch = self.actor_agent.rl_policy(
+                state_batch, use_para="policy"
+            )
+            state_action_batch = torch.cat((state_batch, action_pred_batch), dim=1)
+            q_values = self.policy_net(state_action_batch)
         avg_q_values = q_values.mean().item()
 
         return avg_q_values
@@ -866,7 +903,8 @@ class Actor:
                  output_dim: int, 
                  hidden_layers: Optional[List[int]], 
                  weight_decay: float,
-                 critic_agent: Any) -> None:
+                 critic_agent: Any,
+                 action_bounds: Optional[List[Tuple[float, float]]] = None) -> None:
         """
         Initialize the Actor agent.
         
@@ -887,8 +925,7 @@ class Actor:
         self.target_net = FCN_actor(input_dim, output_dim, hidden_layers,
                                  cfg.activation_function_actor, cfg.activation_params_actor).to(self.device)
 
-        for target_param, param in zip(self.target_net.parameters(), self.policy_net.parameters()):
-            target_param.data.copy_(param.data)
+        self.target_net.load_state_dict(self.policy_net.state_dict())
 
         if hidden_layers is None:
             self.optimizer = optim.SGD([
@@ -900,6 +937,20 @@ class Actor:
 
         # input the evaluation agent - Critic
         self.critic_agent = critic_agent
+        self.action_bounds = tuple(action_bounds or ())
+        if self.action_bounds and len(self.action_bounds) != output_dim:
+            raise ValueError(
+                "Expected one action bound per output dimension ({0}), got {1}".format(
+                    output_dim, len(self.action_bounds)
+                )
+            )
+
+    def _bounded_action(self, values: torch.Tensor) -> torch.Tensor:
+        if not self.action_bounds:
+            return values
+        low = values.new_tensor([bounds[0] for bounds in self.action_bounds])
+        high = values.new_tensor([bounds[1] for bounds in self.action_bounds])
+        return low + torch.sigmoid(values) * (high - low)
 
     def update(self, state_batch: torch.Tensor) -> float:
         """
@@ -911,16 +962,22 @@ class Actor:
         Returns:
             float: Loss value after update
         """
-        action_pred_batch = self.policy_net(state_batch)
-        q_values = self.critic_agent.policy_net(torch.cat((state_batch, action_pred_batch), dim = 1))
+        action_pred_batch = self._bounded_action(self.policy_net(state_batch))
+        critic_parameters = list(self.critic_agent.policy_net.parameters())
+        for parameter in critic_parameters:
+            parameter.requires_grad_(False)
+        q_values = self.critic_agent.policy_net(
+            torch.cat((state_batch, action_pred_batch), dim=1)
+        )
 
         # Positive Q-value mean to minimize Q-value (gradient descent)
         loss = q_values.mean()
 
         self.optimizer.zero_grad()
         loss.backward()
-        for param in self.policy_net.parameters():
-            param.grad.data.clamp_(-1, 1)
+        for parameter in critic_parameters:
+            parameter.requires_grad_(True)
+        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 1.0)
         self.optimizer.step()
 
         return loss.item()
@@ -936,9 +993,11 @@ class Actor:
             torch.Tensor: Batch of actions selected by the policy
         """
         if use_para == 'policy':
-            action_pred_batch = self.policy_net(state_batch)
+            action_pred_batch = self._bounded_action(self.policy_net(state_batch))
         elif use_para == 'target':
-            action_pred_batch = self.target_net(state_batch)
+            action_pred_batch = self._bounded_action(self.target_net(state_batch))
+        else:
+            raise ValueError("use_para must be 'policy' or 'target'")
 
         return action_pred_batch
 
@@ -993,6 +1052,8 @@ class RLConfig_custom:
         device_type (str): Device type ('cuda' or 'cpu')
         lambda_update (Optional[str]): Method for updating Lagrange multipliers (None, 'PG with bound', 'EG with bound')
         bound_lambda (Optional[float]): Bound for Lagrange multipliers when using bounded updates
+        random_seed (int): Seed for replay sampling and training reproducibility
+        deterministic_algorithms (bool): Request deterministic PyTorch operations
     """
     
     def __init__(self, 
@@ -1030,7 +1091,9 @@ class RLConfig_custom:
                  threshold_list: List[float], 
                  device_type: str,
                  lambda_update: Optional[str] = None,
-                 bound_lambda: Optional[float] = None) -> None:
+                 bound_lambda: Optional[float] = None,
+                 random_seed: int = 42,
+                 deterministic_algorithms: bool = True) -> None:
         """
         Initialize the RLConfig_custom with the given parameters.
         
@@ -1104,6 +1167,8 @@ class RLConfig_custom:
         # Lagrange multiplier update configuration
         self.lambda_update = lambda_update
         self.bound_lambda = bound_lambda
+        self.random_seed = int(random_seed)
+        self.deterministic_algorithms = bool(deterministic_algorithms)
 
         if device_type == 'cuda':
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # check gpu
@@ -1362,7 +1427,9 @@ class RLConfigurator:
 
             for i in range(constraint_num):
                 lr_fqe_con = self._get_float_input(f"Enter the learning rate of FQE Agent for evaluating the constraint {i+1}: ", 0)
-                lr_lambda = self._get_float_input(f"Enter the learning rate for dual variable $\lambda$ {i+1}: ", 0)
+                lr_lambda = self._get_float_input(
+                    f"Enter the learning rate for dual variable lambda {i+1}: ", 0
+                )
                 threshold = self._get_float_input(f"Enter the value of constraint threshold {i+1}: ", 0)
                 lr_fqe_con_list.append(lr_fqe_con)
                 lr_lambda_list.append(lr_lambda)
@@ -1544,7 +1611,8 @@ class RLTraining:
                  input_dim: int, 
                  output_dim: int, 
                  train_data_loader: callable, 
-                 val_data_loader: callable) -> None:
+                 val_data_loader: callable,
+                 action_bounds: Optional[List[Tuple[float, float]]] = None) -> None:
         """
         Initialize the training environment.
         
@@ -1561,6 +1629,7 @@ class RLTraining:
 
         self.train_data_loader = train_data_loader
         self.val_data_loader = val_data_loader
+        self.action_bounds = action_bounds
 
         # Store for Actor models history
         self.actor_models_history: List[Dict[str, Any]] = []
@@ -1584,7 +1653,7 @@ class RLTraining:
         Returns:
             Actor: Configured Actor agent
         """
-        torch.manual_seed(seed)
+        set_deterministic_seed(seed)
         
         if weight_decay is None:
             weight_decay = self.cfg.weight_decay_actor
@@ -1595,7 +1664,8 @@ class RLTraining:
             output_dim = self.output_dim,
             hidden_layers = hidden_layers,
             weight_decay = weight_decay,
-            critic_agent = critic_agent
+            critic_agent = critic_agent,
+            action_bounds=self.action_bounds,
         )
         return agent_actor
     
@@ -1611,7 +1681,7 @@ class RLTraining:
         Returns:
             Critic: Configured Critic agent
         """
-        torch.manual_seed(seed)
+        set_deterministic_seed(seed)
         
         if weight_decay is None:
             weight_decay = self.cfg.weight_decay_critic
@@ -1640,15 +1710,15 @@ class RLTraining:
         Returns:
             FQE: Configured FQE agent
         """
-        torch.manual_seed(seed)
+        set_deterministic_seed(seed)
         
         if weight_decay is None:
             weight_decay = self.cfg.weight_decay_fqe
             
         agent_fqe = FQE(
             cfg = self.cfg,
-            input_dim = self.input_dim,
-            output_dim = self.output_dim,
+            input_dim = self.input_dim + self.output_dim,
+            output_dim = 1,
             hidden_layers = hidden_layers,
             weight_decay = weight_decay,
             eval_agent = eval_agent,
@@ -1657,28 +1727,47 @@ class RLTraining:
         return agent_fqe
     
     def projected_gradient_update(self, lambda_list, B):
-        if B == None:
-            return [max(0, x) for x in lambda_list]
-        else:
-            norm = math.sqrt(sum(x*x for x in lambda_list))
-            if norm > B:
-                return [B * x / norm for x in lambda_list]
-            else:
-                return lambda_list
+        projected = [max(0.0, float(x)) for x in lambda_list]
+        if B is None:
+            return projected
+        if B < 0:
+            raise ValueError("PG with bound requires bound_lambda >= 0")
+        norm = math.sqrt(sum(x * x for x in projected))
+        if norm > B and norm > 0:
+            return [B * x / norm for x in projected]
+        return projected
             
     def exponentiated_gradient(self, lambda_list, constraint_violation_list, lr_list, B):
         d = len(constraint_violation_list)
-        constraint_violation_list_aug = constraint_violation_list + [0.0]
-        lr_list_aug = lr_list + [0.0]
-
-        w = [
-            lambda_list[i] * math.exp(-lr_list_aug[i] * constraint_violation_list_aug[i])
-            for i in range(d + 1)
+        if len(lr_list) != d:
+            raise ValueError(
+                "Expected one EG learning rate per constraint ({0}), got {1}".format(
+                    d, len(lr_list)
+                )
+            )
+        if B is None or B <= 0:
+            raise ValueError("EG with bound requires bound_lambda > 0")
+        if len(lambda_list) == d:
+            lambda_list = list(lambda_list) + [max(B - sum(lambda_list), 0.0)]
+        if len(lambda_list) != d + 1:
+            raise ValueError(
+                "EG expects {0} constraint weights plus one slack weight, got {1}".format(
+                    d, len(lambda_list)
+                )
+            )
+        gradients = [
+            float(lr) * float(violation)
+            for lr, violation in zip(lr_list, constraint_violation_list)
+        ] + [0.0]
+        shift = max(gradients)
+        weights = [
+            max(float(value), 0.0) * math.exp(gradient - shift)
+            for value, gradient in zip(lambda_list, gradients)
         ]
-
-        total_w = sum(w)
-
-        return [wi/total_w * B for wi in w]
+        total = sum(weights)
+        if not math.isfinite(total) or total <= 0:
+            return [B / (d + 1) for _ in range(d + 1)]
+        return [weight / total * B for weight in weights]
 
     def train(self, 
               agent_actor: Actor, 
@@ -1801,7 +1890,7 @@ class RLTraining:
                 loss_list_critic.append(loss_critic)
                 loss_list_fqe_obj.append(loss_ev_obj)
 
-                if constraint is None:
+                if not constraint:
                     for m in range(len(agent_fqe_con_list)):
                         loss_con = agent_fqe_con_list[m].update(state_action_batch, con_cost_batch[m], next_state_batch, done_batch)
                         loss_list_fqe_con[m].append(loss_con)
@@ -1872,22 +1961,28 @@ class RLTraining:
                     fqe_est_obj.append(avg_q_value_obj)
                 ######################################################################################
                 if j % self.cfg.target_update == 0:
-                    ### update the target agent for learning agent (Critic)
-                    for target_param, policy_param in zip(agent_critic.target_net.parameters(), agent_critic.policy_net.parameters()):
-                        target_param.data.copy_(self.cfg.tau * policy_param.data + (1 - self.cfg.tau) * target_param.data)
-
-                    ### update the target agent for learning agent (Actor)
-                    for target_param, policy_param in zip(agent_actor.target_net.parameters(), agent_actor.policy_net.parameters()):
-                        target_param.data.copy_(self.cfg.tau * policy_param.data + (1 - self.cfg.tau) * target_param.data)
-
-                    ### update the target agent for evaluation agent (FQE objective cost)
-                    for target_param, policy_param in zip(agent_fqe_obj.target_net.parameters(), agent_fqe_obj.policy_net.parameters()):
-                        target_param.data.copy_(self.cfg.tau * policy_param.data + (1 - self.cfg.tau) * target_param.data)
-
-                    ### update the target agent for evaluation agent (FQE constraint cost)
-                    for agent_fqe_con in agent_fqe_con_list:
-                        for target_param, policy_param in zip(agent_fqe_con.target_net.parameters(), agent_fqe_con.policy_net.parameters()):
-                            target_param.data.copy_(self.cfg.tau * policy_param.data + (1 - self.cfg.tau) * target_param.data)
+                    with torch.no_grad():
+                        for target_param, policy_param in zip(
+                            agent_critic.target_net.parameters(),
+                            agent_critic.policy_net.parameters(),
+                        ):
+                            target_param.lerp_(policy_param, self.cfg.tau)
+                        for target_param, policy_param in zip(
+                            agent_actor.target_net.parameters(),
+                            agent_actor.policy_net.parameters(),
+                        ):
+                            target_param.lerp_(policy_param, self.cfg.tau)
+                        for target_param, policy_param in zip(
+                            agent_fqe_obj.target_net.parameters(),
+                            agent_fqe_obj.policy_net.parameters(),
+                        ):
+                            target_param.lerp_(policy_param, self.cfg.tau)
+                        for agent_fqe_con in agent_fqe_con_list:
+                            for target_param, policy_param in zip(
+                                agent_fqe_con.target_net.parameters(),
+                                agent_fqe_con.policy_net.parameters(),
+                            ):
+                                target_param.lerp_(policy_param, self.cfg.tau)
                 #########################################################################################
             print(f"Epoch {k + 1}/{self.cfg.train_eps}")
             print(f"Average FQE estimated objective cost after epoch {k + 1}: {np.mean(fqe_est_obj)}")        
@@ -1984,7 +2079,15 @@ def save_ocrl_models_and_data(agent_actor,
                               version: str = "v0",
                               custom_filename_prefix: str = None,
                               save_date: bool = True,
-                              create_dirs: bool = True):
+                              create_dirs: bool = True,
+                              dataset_bundle=None,
+                              dataset_content_hash: str = None,
+                              model_dimensions: Dict[str, Any] = None,
+                              constraints=None,
+                              rl_config=None,
+                              seeds: Dict[str, Any] = None,
+                              manifest_path: str = None,
+                              training_method: str = None):
     """
     Save trained OCRL models and training data with flexible path and naming options.
     
@@ -2103,6 +2206,38 @@ def save_ocrl_models_and_data(agent_actor,
         
         saved_files['training_data'] = data_files
         print(f"Training data saved successfully to: {data_save_path}")
+
+        manifest_dataset = dataset_bundle or dataset_content_hash
+        if manifest_dataset is not None:
+            if dataset_bundle is not None and dataset_content_hash is not None:
+                try:
+                    from .model_artifacts import dataset_content_hash as compute_dataset_hash
+                except ImportError:
+                    from model_artifacts import dataset_content_hash as compute_dataset_hash
+                if compute_dataset_hash(dataset_bundle) != compute_dataset_hash(dataset_content_hash):
+                    raise ValueError("dataset_bundle and dataset_content_hash disagree")
+            lineage = create_model_artifact_manifest(
+                model_files,
+                manifest_dataset,
+                dimensions=model_dimensions or {
+                    "state_dim": getattr(ocrl_training, "input_dim", None),
+                    "action_dim": getattr(ocrl_training, "output_dim", None),
+                },
+                constraints=(
+                    constraints
+                    if constraints is not None
+                    else len(agent_fqe_con_list)
+                ),
+                rl_config=rl_config if rl_config is not None else getattr(ocrl_training, "cfg", {}),
+                seeds=seeds,
+                training_method=training_method,
+            )
+            if manifest_path is None:
+                manifest_path = os.path.join(
+                    model_save_path,
+                    f"{filename_prefix}_manifest{date_part}{version_part}.json",
+                )
+            saved_files['manifest'] = lineage.write(manifest_path)
         
         # Summary
         print(f"\n=== Save Summary ===")

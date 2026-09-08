@@ -5,6 +5,7 @@ include requirements.txt
 
 # Include ConMedRL library
 recursive-include ConMedRL *.py
+recursive-include ConMedRL/data/profiles *.json
 recursive-exclude ConMedRL __pycache__
 recursive-exclude ConMedRL *.pyc
 
@@ -23,7 +24,7 @@ exclude runtime.txt
 prune CDM-Software
 prune Docker-Deployment
 prune Software_FQE_models
-prune "Experiment Notebook"
+global-exclude *.ipynb
 prune image
 prune model_output
 prune models

@@ -1,0 +1,43 @@
+{
+  "spec_version": "1.0",
+  "name": "extubation",
+  "description": "NWICU extubation task using point-event pairing; no unplanned-extubation label is fabricated.",
+  "states": [
+    "age", "M", "weight", "Heart Rate", "Blood Pressure Systolic",
+    "Blood Pressure Diastolic", "Temperature C", "SaO2",
+    "Respiratory Rate", "Creatinine (serum)", "BUN", "Sodium (serum)",
+    "Potassium (serum)", "Chloride (serum)", "Magnesium",
+    "Ionized Calcium", "Glucose (serum)", "Hemoglobin",
+    "Hematocrit (serum)", "WBC", "Platelet Count", "Total Bilirubin",
+    "Albumin", "Lactate", "Prothrombin time", "PTT", "INR",
+    "Tidal Volume", "PEEP Level", "PaO2/FiO2 Ratio",
+    "Rapid Shallow Breathing Index", "Mechanical Ventilation Duration",
+    "extubation_count"
+  ],
+  "events": {
+    "intubation": {"table": "procedureevents", "source_ids": [753461]},
+    "ventilation": {"table": "procedureevents", "source_ids": [787541]},
+    "extubation": {"table": "procedureevents", "source_ids": [763189]},
+    "non_invasive_ventilation": {"table": "procedureevents", "source_ids": [792843]}
+  },
+  "timeline": {
+    "anchor": "intubation_time",
+    "end_column": "extubation_time",
+    "decision_epoch_hours": 12.0
+  },
+  "action": {
+    "type": "discrete",
+    "columns": ["extubation_action"],
+    "categories": [0, 1],
+    "terminal_column": "is_terminal_action"
+  },
+  "evidence": [
+    "NWICU d_items procedure labels",
+    "Point-event order verified as intubation before extubation per stay"
+  ],
+  "warnings": [
+    "No verified tracheostomy-placement concept exists; TRACHEOSTOMY CAPPING/PMV is not used as a substitute.",
+    "No verified unplanned-extubation concept exists; the flag is explicitly unavailable rather than inferred."
+  ],
+  "unresolved_decisions": []
+}

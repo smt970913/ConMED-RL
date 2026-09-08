@@ -7,7 +7,8 @@ name = "ConMedRL"
 dynamic = ["version"]
 description = "An Offline Constrained Reinforcement Learning Toolkit for Medical Decision Making"
 readme = "PYPI_README.md"
-license = {file = "LICENSE"}
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     {name = "Maotong Sun", email = "maotong.sun@tum.de"},
     {name = "Jingui Xie", email = "jingui.xie@tum.de"},
@@ -22,7 +23,6 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Scientific/Engineering :: Medical Science Apps.",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
@@ -43,10 +43,10 @@ keywords = [
 dependencies = [
     # Core dependencies
     "flask==2.2.2",
-    "scikit-learn==1.2.1", 
+    "scikit-learn>=1.2.1",
     "torch>=1.8.0",
-    "numpy==1.23.5",
-    "pandas==1.5.3",
+    "numpy>=1.23.5",
+    "pandas>=1.5.3",
     "tqdm==4.64.1",
     # Web server and task queue
     "celery==5.3.6",
@@ -94,16 +94,26 @@ viz = [
     "seaborn>=0.11.0",
     "plotly>=5.0.0",
 ]
+data = [
+    "pyarrow>=10.0",
+    "d3rlpy>=2.0",
+]
+llm = [
+    "openai>=1.0",
+    "anthropic>=0.20",
+]
 
 [tool.setuptools]
-packages = ["ConMedRL", "Data"]
 include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["ConMedRL", "ConMedRL.*", "Data", "Data.*"]
 
 [tool.setuptools.dynamic]
 version = {attr = "ConMedRL.__version__"}
 
 [tool.setuptools.package-data]
-ConMedRL = ["*.py"]
+ConMedRL = ["*.py", "data/profiles/*.json"]
 Data = ["**/*.py"]
 
 [tool.black]

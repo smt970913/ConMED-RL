@@ -1,510 +1,362 @@
-# ConMED-RL: An OCRL-Based Toolkit for Medical Decision Support
+# ConMED-RL
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![PyPI version](https://badge.fury.io/py/conmedrl.svg)](https://badge.fury.io/py/conmedrl)
+[![PyPI version](https://badge.fury.io/py/conmedrl.svg)](https://pypi.org/project/conmedrl/)
 
-<div style="text-align: center;">
-    <img src="image/ConMED-RL Logo.png" width="400">
-</div>
+<p align="center">
+  <img src="image/ConMED-RL Logo.png" width="400" alt="ConMED-RL logo">
+</p>
 
-This repository provides the implementation of an **Offline Constrained Reinforcement Learning (OCRL)** - based decision support toolkit for medical decision-making. The toolkit is developed based on our research on **ICU extubation** and **discharge** decision-making. It builds on our proposed multi-timescale offline constrained policy learning framework.
-Beyond the core algorithm module, this toolkit includes a comprehensive data preprocessing pipeline that transforms raw clinical data into formats suitable for offline RL/OCRL training, as well as an interactive web-based application powered by trained Fitted-Q-Evaluation (FQE) models for clinical decision support.
-This repository is created by **Maotong Sun** (maotong.sun@tum.de) and **Jingui Xie** (jingui.xie@tum.de).
+ConMED-RL is an open-source Python toolkit for offline constrained
+reinforcement learning (OCRL) in critical-care research. It connects:
 
-**This toolkit is based on our accepted paper about the application of OCRL method in ICU discharge decision-making, and it is waiting for the publishment in *IISE Transactions on Healthcare Systems Engineering* (available in the `Previous_Research/` folder). Once this article has published online, it will be available at the following permanent link: https://doi.org/10.1080/24725579.2025.2569355. The research on ICU extubation decision-making is currently under major revision in *Health Care Management Science*.**
+1. processing of local ICU data into trajectory-aligned offline RL datasets;
+2. discrete FQI/FQE and continuous actor-critic/FQE training;
+3. separate objective and constraint evaluation;
+4. optional interoperability, data-withdrawal, and research-interface tools.
 
-## Repository Structure
+The reference applications are ICU discharge and extubation decision-making.
+The package is intended for retrospective research and software evaluation. It
+is not a medical device and must not be used to direct patient care without
+appropriate local validation, governance, regulatory review, and clinician
+oversight.
 
-```
-ICU-Decision Making-OCRL/
-│
-├── CDM-Software/                            # Clinical Decision Making Software
-│   ├── web_application_demo.py              # Main web application (Flask)
-│   ├── web_application_test.py              # Web application testing
-│   ├── interactive_support.py               # Interactive decision support system
-│   ├── test_environment.py                  # Environment testing utilities
-│   ├── run_app.bat                          # Application runner (Windows)
-│   ├── run_app.sh                           # Application runner (Linux/Mac)
-│   └── DEPLOYMENT_GUIDE.md                  # Deployment documentation
-│
-├── ConMedRL/                                # Core OCRL framework
-│   ├── __init__.py                          # Package initialization
-│   ├── conmedrl.py                          # Main OCRL implementation - discrete action space
-│   ├── conmedrl_continuous.py               # Main OCRL implementation - continuous action space
-│   ├── data_loader.py                       # DataLoader for sampling transitions
-│
-├── Data/                                    # Datasets
-│   ├── mimic_iv_icu_extubation/
-│   │   └── data_preprocess.py               # MIMIC-IV extubation data preprocessing
-│   ├── mimic_iv_icu_discharge/         
-│   │   └── data_preprocess.py               # MIMIC-IV discharge data preprocessing
-│   ├── SICdb_extubation/                    # Salzburg extubation dataset
-│   └── SICdb_discharge/                     # Salzburg discharge dataset
-│
-├── Experiment Notebook/                     # Jupyter notebooks for experiments
-│   ├── Example_MIMIC-IV_Extubation_Decision_Making.ipynb
-│   ├── Example_MIMIC-IV_Discharge_Decision_Making.ipynb
-│   ├── MIMIC_IV_dataset_prepare.ipynb
-│   └── Salzburg_dataset_prepare.ipynb
-│
-├── Software_FQE_models/                     # Pre-trained models and software tools
-│   ├── discharge_decision_making/           # Discharge decision models  
-│   └── extubation_decision_making/          # Extubation decision models
-│
-├── Previous_Research/                       # Published research papers
-│   └── IISE-Transactions-on-HSE_2025_Discharge_with_Multiple_Readmissions_and_Constraints.pdf
-│
-├── image/                                   # Documentation images
-│
-├── README.md                                # Project documentation
-├── requirements.txt                         # Python dependencies
-├── setup.py                                 # Package setup file (setuptools)
-├── pyproject.toml                           # Modern Python package configuration
-├── build_package.py                         # Package build and publish script
-├── MANIFEST.in                              # Package file inclusion rules
-├── runtime.txt                              # Python runtime specification
-└── Procfile                                 # Process file for deployment
-```
+## What is included in version 1.1.0
 
-## Installation Guideline
+- A unified `ConMedRL.data.build_dataset` API for MIMIC-IV and SICdb.
+- A reviewed declarative adapter for MIMIC-like sources, including NWICU
+  example profiles.
+- Dynamic state-space resolution based on variables available in the selected
+  database.
+- Task-specific, trajectory-preserving train/validation/test splitting.
+- Training-only fitting of imputation, outlier handling, and scaling.
+- `RLDatasetBundle`, the common contract between preprocessing, ConMED-RL
+  loaders, and external offline RL libraries.
+- CSV output plus optional Parquet and `d3rlpy.dataset.MDPDataset` exports.
+- Optional pseudonymized FHIR R4 NDJSON export.
+- Metadata-only LLM assistance for terminology search and reviewed processing
+  plans. Patient rows are not sent to an LLM.
+- Exact dataset reconstruction after a local patient-withdrawal request,
+  invalidation of superseded manifests, model compatibility checks, and
+  caller-controlled fresh retraining.
+- Discrete and bounded multi-dimensional continuous action support.
+- Deterministic seeding and dataset/model content hashes for reproducibility.
 
-ConMED-RL supports multiple installation methods to accommodate different use cases and environments. Choose the method that best fits your needs:
+For implementation details and safety boundaries, see
+[`DATA_PROCESSING.md`](DATA_PROCESSING.md).
 
-### Prerequisites
+## Installation
 
-- **Python 3.10.14** (recommended, as specified in `runtime.txt`)
-- **Git** for cloning the repository
-
-### Method 1: PyPI Installation (Recommended)
-
-For the core ConMED-RL framework:
+Install the released package:
 
 ```bash
-# Install from PyPI
 pip install conmedrl
-
-# Or install directly from GitHub
-pip install git+https://github.com/smt970913/ConMED-RL.git
 ```
 
-**Verify installation:**
-```bash
-python -c "import ConMedRL; print('ConMED-RL version:', ConMedRL.__version__)"
-```
-
-### Method 2: Local Installation (Recommended for Development and Web Application)
-
-For full repository access including web application and experiment notebooks:
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/smt970913/ConMED-RL.git
-   cd ConMED-RL
-   ```
-
-2. **Create a virtual environment:**
-   ```bash
-   # Using conda (recommended)
-   conda create -n ConMedRL python=3.10.14
-   conda activate ConMedRL
-   
-   # OR using venv
-   python -m venv ConMedRL_env
-   # On Windows:
-   ConMedRL_env\Scripts\activate
-   # On Linux/Mac:
-   source ConMedRL_env/bin/activate
-   ```
-
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Set up the environment:**
-   ```bash
-   export PYTHONPATH="${PYTHONPATH}:$(pwd)"
-   ```
-
-5. **Verify installation:**
-   ```bash
-   python -c "import ConMedRL; print('ConMED-RL version:', ConMedRL.__version__)"
-   ```
-
-### Quick Start for Different Use Cases
-
-#### For Research and Experimentation:
-1. Follow **Method 2** (Local Installation)
-2. Launch Jupyter notebooks:
-   ```bash
-   jupyter notebook "Experiment Notebook/"
-   ```
-3. Start with example notebooks for MIMIC-IV datasets
-
-#### For Clinical Decision Support (Demo):
-1. Follow **Method 2** (Local Installation)  
-2. Run the web application:
-   ```bash
-   cd CDM-Software
-   python web_application_demo.py
-   ```
-3. Access the demo at `http://localhost:5000`
-4. Refer to `CDM-Software/DEPLOYMENT_GUIDE.md` for detailed demo setup instructions
-
-**Note**: This is a demonstration version only. See the Software Module section for limitations and future deployment plans.
-
-#### For Custom Development:
-1. Follow **Method 1** (PyPI Installation) for quick setup
-2. Import ConMED-RL components:
-   ```python
-   from ConMedRL import FQE, FQI, TrainDataLoader, ValTestDataLoader
-   from Data import mimic_iv_icu_discharge, mimic_iv_icu_extubation
-   ```
-3. For accessing source code and examples, use **Method 2** (Local Installation)
-
-### Dependencies Overview
-
-The toolkit requires the following main dependencies:
-- **PyTorch**: Building framework for OCRL algorithms
-- **Flask**: Web framework for the clinical decision support interface
-- **scikit-learn**: Dataset split
-- **pandas/numpy**: Data manipulation and numerical computing
-- **Dask**: Large data manipulation
-
-### Troubleshooting
-
-**Common Installation Issues:**
-
-1. **PyTorch installation issues:**
-   ```bash
-   # For CPU-only installation:
-   pip install torch --index-url https://download.pytorch.org/whl/cpu
-   
-   # For GPU support (CUDA):
-   pip install torch --index-url https://download.pytorch.org/whl/cu118
-   ```
-
-2. **Memory issues with large datasets:**
-   - Ensure sufficient RAM (minimum 8GB recommended)
-   - Use data batching for large datasets
-
-**Getting Help:**
-- Check the `CDM-Software/DEPLOYMENT_GUIDE.md` for detailed deployment instructions
-- Review example notebooks in `Experiment Notebook/` directory
-- Contact the maintainers: maotong.sun@tum.de
-
-## Implementation Guideline
-<div style="text-align: center;">
-    <img src="image/ConMED-RL_pipeline.svg" width = 1400> 
-</div>
-
-### Dataset Module
-The datasets are organized in the `Data/` folder with separate subdirectories for different clinical scenarios (discharge decision-making and extubation decision-making) and data sources (MIMIC-IV and SICdb).
-
-#### Data Preprocessing Scripts
-The toolkit includes specialized data preprocessing scripts located in `Data/*/data_preprocess.py` that transform diverse clinical datasets into standardized formats compatible with sequential decision-making frameworks. Our unified preprocessing architecture employs consistent Python classes and functions across all four `data_preprocess.py` implementations, with dataset-specific variations limited to the data selection phase. This design choice ensures reproducible data transformations while maintaining the flexibility needed to accommodate the unique characteristics of different medical datasets and research objectives.
-
-**Key Feature**: Our preprocessing pipeline is implemented entirely in `Python` using `Dask` for efficient processing of large-scale clinical datasets (e.g., chartevents tables), **eliminating the need for SQL databases or complex data infrastructure**. This approach significantly simplifies the setup process and enhances reproducibility for researchers.
-
-The preprocessing pipeline transforms raw clinical data into two structured pandas DataFrames that contain all necessary components for Markov Decision Process (MDP) formulation:
-- **State Table**: Contains all physiological variables and clinical measurements that constitute the state space
-- **Outcome Table**: Contains action decisions, terminal indicators (`done`), and reward information
-
-These two tables provide the essential MDP components required for model-free offline reinforcement learning training.
-
-#### Multi-language Support
-For datasets that contain medical terminology in different languages (e.g., German in the SICdb), we provide an interface for calling large language model tools to perform translation and terminology lookup. **The large language model tools are used exclusively for translation purposes and are designed to maintain strict data privacy and confidentiality.**
-
-#### Data Availability
-The original medical research datasets (MIMIC-IV, SICdb and NWICU) **are not included in this repository due to privacy and licensing requirements**. However, they can be obtained from authorized sources:
-
-- **MIMIC-IV**: Available through [PhysioNet](https://physionet.org/content/mimiciv/3.1/) following proper data use agreements.
-- **SICdb**: Available through [PhysioNet](https://physionet.org/content/sicdb/1.0.8/) following proper data use agreements.
-- **NWICU**: Available through [PhysioNet](https://physionet.org/content/nwicu-northwestern-icu/0.1.0/) following proper data use agreements.
-
-Please ensure you have the appropriate permissions and follow all data use agreements when accessing these datasets.
-
-**Note**: Note that to demonstrate our algorithm's performance, we have included preprocessed MIMIC-IV data in the `processed_data_discharge.zip` under `Experiment Notebook`. This data, which we used in our discharge decision-making task, is provided solely for testing purposes to verify that the algorithm runs correctly (after extraction).
-
-
-### OCRL Algorithm Module
-<div style="text-align: center;">
-    <img src="image/dataset_usage.svg" width = 500> 
-</div>
-
-The OCRL Algorithm Module is the core component of ConMED-RL, implementing state-of-the-art offline constrained reinforcement learning algorithms specifically designed for critical care decision-making problems. This module bridges the gap between preprocessed clinical data and actionable decision support models.
-
-#### Data Loading and Management
-
-The `ConMEDRL/data_loader.py` module transforms preprocessed pandas DataFrames into training-ready formats for offline reinforcement learning algorithms. This lightweight framework handles numerical data loading and batch preparation for model training. Alternatively, researchers can use the generated **Outcome Table** and **State Table** directly to construct MDP environments with established Python RL libraries such as `d3rlpy`.
-
-**Core Components** - `data_loader.py`:
-
-1. **`TrainDataLoader` Class**:
-   - **Purpose**: Handles training data preparation and batch generation.
-   - **Key Methods**:
-     - `data_buffer_train()`: Loads training data into PyTorch sampling buffer.
-     - `data_torch_loader_train()`: Returns PyTorch tensors for training.
-   - **Features**:
-     - Custom done condition function support.
-     - Configurable constraint cost extraction.
-     - Terminal state handling.
-     - Memory buffer integration with `ReplayBuffer`.
-
-2. **`ValTestDataLoader` Class**:
-   - **Purpose**: Manages validation and testing data processing.
-   - **Key Methods**:
-     - `data_buffer()`: Loads validation/test data into buffer.
-     - `data_torch_loader()`: Returns tensors for validation or testing.
-   - **Features**:
-     - Separate validation and test data handling.
-     - Flexible data extraction modes.
-
-**Terminal Condition Functions** - `done_condition_function_examples.py`:
-- **`discharge_done_condition()`**: Example function for discharge decision-making scenarios.
-- **Custom Logic**: Users can define domain-specific terminal conditions based on clinical outcomes.
-- **Integration**: These functions are passed to data loader methods to determine episode termination.
-
-**Data Flow Process**:
-```
-Preprocessed DataFrames → DataLoader → ReplayBuffer → PyTorch Tensors → RL Training
-     ↓                        ↓              ↓               ↓               ↓
-State/Outcome Tables → Buffer Loading → Memory Sampling → Batched Tensors → Model Updates
-```
-
-#### Core OCRL Framework
-
-The `ConMEDRL/ConMEDrl.py` module implements the complete offline constrained reinforcement learning (OCRL) framework, featuring advanced algorithms specifically adapted for constrained medical decision-making.
-
-**Approximation Model Architectures:**
-
-1. **`FCN_fqe`**:
-   - **Architecture**: Linear approximation/Fully connected neural network for Q-value estimation in policy evaluation.
-   - **Features**: Configurable hidden layers, multiple activation functions, flexible architecture.
-
-2. **`FCN_fqi`**:
-   - **Architecture**: Linear approximation/Fully connected neural network for Q-value estimation in policy optimization.
-   - **Features**: Similar architecture to FCN_fqe, optimized for constrained policy learning.
-
-**Data Management:**
-
-3. **`ReplayBuffer` Class**:
-   - **Purpose**: Storage and sampling of offline clinical transitions.
-   - **Key Methods**:
-     - `push()`: Stores transitions (state, action, obj_cost, con_cost, next_state, done).
-     - `sample()`: Random sampling for training batches.
-     - `extract()`: Extract all stored data for validation/testing.
-
-**Core Algorithms:**
-
-4. **`FQE` (Fitted Q Evaluation) Class**:
-   - **Purpose**: Evaluates the performance of existing clinical policies or policies derived by RL algorithm.
-   - **Key Methods**:
-     - `update()`: Updates Q-function using Bellman equation.
-     - `avg_Q_value_est()`: Estimates average Q-values with confidence intervals.
-     - `save()`: Saves trained model.
-   - **Applications**: Policy evaluation and benchmarking.
-
-5. **`FQI` (Fitted Q Iteration) Class**:
-   - **Purpose**: Learns optimal decision policies with/without constraints.
-   - **Key Methods**:
-     - `update()`: Updates Q-function with constraint incorporation.
-     - `avg_Q_value_est()`: Estimates average Q-values.
-     - `rl_policy()`: Generates optimal actions given states.
-     - `save()`: Saves trained model.
-   - **Features**: Handles multiple constraints using Lagrange multipliers.
-
-**Configuration and Training:**
-
-6. **`RLConfig_custom` Class**:
-   - **Purpose**: Configuration object containing all hyperparameters.
-   - **Parameters**: Learning rates, batch size, network architectures, constraints, optimizers, loss functions.
-
-7. **`RLConfigurator` Class**:
-   - **Purpose**: Interactive configuration setup and management.
-   - **Key Methods**:
-     - `choose_config_method()`: Interactive configuration selection.
-     - `load_config_from_json()`: Load configuration from file.
-     - `save_config_to_json()`: Save configuration to file.
-     - `input_rl_config()`: Manual configuration input.
-
-8. **`RLTraining` Class**:
-   - **Purpose**: Orchestrates the complete training pipeline.
-   - **Key Methods**:
-     - `fqi_agent_config()`: Initialize FQI agent.
-     - `fqe_agent_config()`: Initialize FQE agent.
-     - `train()`: Main training loop with constraint handling.
-   - **Features**: Model saving, progress tracking, constraint satisfaction monitoring.
-
-**Utility Functions:**
-- **`save_ocrl_models_and_data()`**: Comprehensive model and data saving functionality.
-
-#### Important Notes on Data Access and Algorithm Validation
-
-**Data Access Requirements:**
-
-Access to clinical datasets (MIMIC-IV, SICdb, etc.) requires users to independently obtain proper ethical approval and data use agreements from the respective data providers. **Users are responsible for:**
-- Completing required ethics training and certifications
-- Obtaining institutional approval for data access
-- Adhering to all data use agreements and privacy regulations
-- Following proper data handling and security protocols
-
-Please refer to the **Dataset Module** section above for links to authorized data sources and detailed information on data availability.
-
-**Algorithm Performance and Validation:**
-
-The actual experimental results and comprehensive performance evaluation of our OCRL algorithm module on real clinical datasets are documented in our **accepted paper published in *IISE Transactions on Healthcare Systems Engineering*** (available in the `Previous_Research/` folder). This publication provides:
-- Rigorous validation on MIMIC-IV ICU discharge decision-making dataset
-- Comprehensive benchmarking against baseline methods
-- Statistical analysis of constraint satisfaction and policy performance
-- Clinical significance and practical implications
-
-**Demonstration and Usage:**
-
-For detailed usage examples and practical implementations, please refer to the **`Experiment Notebook/`** directory, which contains comprehensive Jupyter notebooks demonstrating:
-- Data preprocessing and loading
-- Model configuration and training
-- Clinical decision-making applications
-   - Case 1: ICU Extubation decision-making
-   - Case 2: ICU Discharge decision-making
-
-**Note**: Processed data for the ICU extubation decision-making task are not currently provided, as the corresponding manuscript is undergoing major revision. However, the overall algorithmic framework and usage procedure are essentially identical to those for discharge decision-making. Users can refer to `Case_ICU_Discharge_Decision_Making.ipynb` for implementation guidance. The notebooks use processed demonstration data specifically prepared for illustrating the algorithm workflow and usage. These demonstration datasets are included to help users understand the implementation process without requiring access to the full clinical datasets.
-
-This framework enables researchers and clinicians to develop, validate, and deploy offline constrained reinforcement learning systems for critical care environments.
-
-### Software Module
-<div style="text-align: center;">
-    <img src="image/software_fig_1.png" width="400">
-</div>
-
-The `CDM-Software/` directory contains a **demonstration version** of the clinical decision support software, showcasing how trained OCRL models can be utilized through an interactive web-based application.
-
-**⚠️ Current Status**: This is a **prototype demonstration**. Clinical deployment in collaboration with healthcare professionals is planned for future work and will require extensive validation, regulatory approval, and security hardening.
-
----
-
-#### How to Run the Demo
-
-**⚠️ Important - First Time Setup**:
-
-Before running the demo, you need to extract the pre-trained FQE models:
-
-1. **Extract the model files**: Unzip `Software_FQE_models.zip` in the project root directory
-   ```bash
-   # This will create the Software_FQE_models/ directory with pre-trained models
-   unzip Software_FQE_models.zip
-   ```
-
-2. **Verify the extraction**: Ensure the following directory structure exists:
-   ```
-   Software_FQE_models/
-   ├── discharge_decision_making/
-   │   ├── demo_pseudo_fqe_model/
-   │   ├── ocrl_agent_s1_fqe_con_los_*.pth
-   │   ├── ocrl_agent_s1_fqe_con_rr_*.pth
-   │   └── ocrl_agent_s1_fqe_obj_*.pth
-   └── extubation_decision_making/
-       └── ...
-   ```
-
-**Quick Start**: After extracting the models, simply execute `web_application_demo.py` to see the web application's interface and functionality:
+Install optional data interoperability or LLM dependencies:
 
 ```bash
-cd CDM-Software
-python web_application_demo.py
+pip install "conmedrl[data]"
+pip install "conmedrl[llm]"
+pip install "conmedrl[data,llm]"
 ```
 
-Then open your browser and navigate to: http://localhost:5000
+For development and the example notebooks:
 
-For detailed setup instructions, see `CDM-Software/DEPLOYMENT_GUIDE.md`.
+```bash
+git clone https://github.com/smt970913/ConMED-RL.git
+cd ConMED-RL
+python -m venv .venv
 
----
+# Windows
+.venv\Scripts\activate
 
-#### Demo Application Components
+# Linux or macOS
+source .venv/bin/activate
 
-**1. Interactive Decision Support System (`interactive_support.py`)**
-- Core module implementing Fitted-Q-Evaluation (FQE) models from the OCRL framework
-- Optimized for inference and Q-value estimation
-- Provides the backend logic for clinical decision support
-
-**2. Web Application (`web_application_demo.py`)**
-- `Flask`-based web application providing an intuitive demo interface
-- Demonstrates the potential clinical decision-making workflow
-- **Technical Stack**: Flask + Bootstrap UI + PyTorch + Scikit-learn
-
-**3. Application Features**:
-
-- **Model Selection Interface (ICU discharge decision-making case)**:
-  - Model 1: FQE Estimated Objective Cost (e.g., mortality risk)
-  - Model 2: FQE Estimated Constraint Cost 1 (e.g., readmission risk)
-  - Model 3: FQE Estimated Constraint Cost 2 (e.g., ICU length-of-stay)
-<div style="text-align: center;">
-    <img src="image/software_fig_4.png" width="400">
-</div>
-
-- **Patient Data Input System**:
-  - Interactive form for inputing physiological variables
-  - Real-time progress tracking and validation
-  - Data scaling with pre-stored scaler
-<div style="text-align: center;">
-    <img src="image/software_fig_5.png" width="400">
-</div>
-
-- **Risk Assessment Visualization**:
-  - Real-time predictions using trained FQE models
-  - Q-value estimation results
-
-<div style="text-align: center;">
-    <img src="image/software_fig_6.png" width="400">
-</div>
-
-**4. Utility Scripts**:
-
-- **Application Launcher** (`run_app.bat` / `run_app.sh`): Cross-platform startup scripts with automatic Python detection and dependency checking
-- **Environment Testing** (`test_environment.py`): Validates system dependencies and model file availability
-
-**Note**: The repository also contains lightweight model files (`web_application_lightweight.py`, `lightweight_model.py`, `LIGHTWEIGHT_MODEL_GUIDE.md`) which were part of early software design exploration. **The main demonstration application is `web_application_demo.py`** as described above.
-
-For detailed usage instructions, see:
-- `CDM-Software/DEPLOYMENT_GUIDE.md` - Demo running guide
-- `CDM-Software/LOCAL_DEVELOPMENT_GUIDE.md` - Detailed setup instructions
-
-#### Clinical Integration Workflow
-
-```
-Patient Data Input → Data Preprocessing → Model Selection → OCRL Prediction → Clinical Decision Support
-       ↓                    ↓                  ↓               ↓                    ↓
-Physiological → MinMax Scaling → FQE Model → Risk Assessment → Physician Review
-Parameters                                                                      ↓
-                                                                          Clinical Decision
+python -m pip install --upgrade pip
+python -m pip install -e ".[data,llm,dev]"
 ```
 
-**Supported Clinical Scenarios**:
-- **ICU Discharge Decision Support**: Risk assessment for patient discharge readiness
-- **ICU Extubation Decision Support**: Evaluation of mechanical ventilation weaning for patients in ICU
+Python 3.10.14, as recorded in `runtime.txt`, is the recommended repository
+environment. Core algorithms can run on CPU or CUDA.
 
-This software demo bridges the gap between research-grade OCRL algorithms and potential clinical applications, demonstrating how AI-assisted decision support tools could be deployed to assist healthcare professionals while maintaining clinical safety standards and leveraging advanced Offline RL techniques.
+## Unified data-processing API
 
-## Docker Deployment Module
+Raw clinical data remain on the user's machine. The following call builds a
+training-ready dataset and writes CSV files:
 
-**Status: Under Development**
+```python
+from ConMedRL import build_dataset
 
-The Docker deployment module (`Docker-Deployment/`) is currently under active development and testing. This module aims to provide containerized deployment solutions for the ConMED-RL toolkit, including:
+bundle = build_dataset(
+    database="mimic-iv",             # "mimic-iv" or "sicdb"
+    task="discharge",                # "discharge" or "extubation"
+    data_dir="/path/to/mimic-iv",
+    output_dir="./processed",
+    output_formats=("csv", "parquet", "d3rlpy"),
+    llm_provider="none",
+)
 
-- **Planned Features**:
-  - Dockerized application with optimized image configuration
-  - Multi-environment support (development, production, research)
-  - Nginx reverse proxy integration
-  - Monitoring solutions (Prometheus + Grafana)
-  - Automated build and deployment scripts
-  - Production-ready configurations with security hardening
+print(bundle.summary())
+print(bundle.schema.names)
+print(bundle.num_constraints)
+```
 
-- **Current Status**:
-  - Docker configurations are available in the repository
-  - Comprehensive testing and validation are in progress
-  - Documentation is being finalized
+The returned `RLDatasetBundle` contains aligned state/outcome tables for the
+train, validation, and test splits; the terminal state; ordered state and
+action metadata; objective and constraint costs; fitted transformations; and a
+content hash.
 
-**Note**: Until the Docker deployment module is fully tested and validated, we recommend using **Method 2 (Local Installation)** for development and production deployments. For quick setup of the core algorithm module, **Method 1 (PyPI Installation)** is recommended. Please refer to the Installation Guideline section above for detailed instructions.
+For the built-in extubation task, the objective is extubation failure and the
+single constraint is remaining ICU length of stay in hours. Reintubation
+contributes to the extubation-failure definition and is not a separate
+constraint. ICU length of stay is not scaled as a cost.
 
-For updates on the Docker deployment module, please check the repository or contact the maintainers.
+## Training with ConMED-RL
+
+`RLDatasetBundle.loader_kwargs` supplies the tables expected by the existing
+PyTorch-based loaders:
+
+```python
+from ConMedRL import TrainDataLoader, ValTestDataLoader
+
+train_loader = TrainDataLoader(
+    cfg=rl_config,
+    **bundle.loader_kwargs("train"),
+)
+train_loader.data_buffer_train(
+    action_name=bundle.loader_action,
+    done_condition=None,
+    num_constraint=bundle.num_constraints,
+)
+
+val_loader = ValTestDataLoader(
+    cfg=rl_config,
+    **bundle.loader_kwargs("val"),
+)
+val_loader.data_buffer(
+    action_name=bundle.loader_action,
+    done_condition=None,
+    num_constraint=bundle.num_constraints,
+)
+```
+
+The resolved dimensions can then configure `RLTraining`:
+
+```python
+from ConMedRL import RLTraining
+
+trainer = RLTraining(
+    cfg=rl_config,
+    state_dim=bundle.state_dim,
+    action_dim=bundle.action_dim,
+    train_data_loader=train_loader.data_torch_loader_train,
+    val_data_loader=val_loader.data_torch_loader,
+)
+```
+
+ConMED-RL creates one FQE estimator for the objective and one for each
+constraint. FQE is fitted on training transitions and evaluated on held-out
+validation decision states during multiplier updates. The test split remains
+unused during training and model selection.
+
+See
+[`Example_ConMedRL_End_to_End_Workflow.ipynb`](Experiment%20Notebook/Example_ConMedRL_End_to_End_Workflow.ipynb)
+for a short complete workflow.
+
+## d3rlpy interoperability
+
+ConMED-RL minimizes costs, whereas `d3rlpy` algorithms maximize rewards.
+Conversion therefore negates costs by default and keeps objective and
+constraint datasets separate:
+
+```python
+datasets = bundle.to_mdp_dataset(
+    split="train",
+    negate_costs=True,
+    include_constraints=True,
+)
+
+objective_dataset = datasets.objective
+constraint_datasets = datasets.constraints
+```
+
+Install this integration with `pip install "conmedrl[data]"`.
+
+## Generic MIMIC-like data and reviewed LLM planning
+
+New MIMIC-like sources do not require a new Python adapter. `DatasetSpec` and
+`TaskSpec` documents define local files, columns, time variables, unit
+conversions, aggregation, actions, terminal events, objectives, and
+constraints. Specifications are validated locally and require an approval hash
+before execution.
+
+An optional LLM can draft mappings from dataset metadata and variable
+dictionaries. It cannot approve a plan, execute generated Python or SQL, or
+receive patient rows. Clinical definitions and all proposed mappings require
+human review.
+
+The packaged NWICU profiles demonstrate this path:
+
+```python
+from ConMedRL.data import PreprocessConfig, build_dataset
+from ConMedRL.data.profiles import load_nwicu_profile
+
+data_dir = "/path/to/nwicu"
+dataset_spec, task_spec, approval_hash = load_nwicu_profile(
+    "extubation",
+    data_dir=data_dir,
+)
+
+config = PreprocessConfig(
+    database="generic",
+    task="extubation",
+    data_dir=data_dir,
+    output_dir="./processed_nwicu",
+    dataset_spec=dataset_spec,
+    task_spec=task_spec,
+    approved_plan_hash=approval_hash,
+)
+
+bundle = build_dataset(config)
+```
+
+Relevant examples:
+
+- [`Example_Generic_MIMIC_Like_NWICU.ipynb`](Experiment%20Notebook/Example_Generic_MIMIC_Like_NWICU.ipynb)
+- [`Example_LLM_Custom_Clinical_Task.ipynb`](Experiment%20Notebook/Example_LLM_Custom_Clinical_Task.ipynb)
+
+## FHIR R4 export
+
+FHIR applies to exchange resources, not to scaled RL tensors or model files.
+Requesting the `fhir` output writes pseudonymized `Patient`, `Encounter`,
+`Observation`, `Procedure`, `ConceptMap`, and `Provenance` NDJSON files:
+
+```python
+bundle = build_dataset(
+    database="mimic-iv",
+    task="discharge",
+    data_dir="/path/to/mimic-iv",
+    output_dir="./processed_fhir",
+    output_formats=("csv", "fhir"),
+)
+```
+
+The exporter performs structural checks. Formal conformance requires a
+separately configured official HL7 validator. See
+[`Example_FHIR_R4_Interop.ipynb`](Experiment%20Notebook/Example_FHIR_R4_Interop.ipynb).
+
+## Patient withdrawal and fresh retraining
+
+For locally held data, ConMED-RL can reconstruct a successor dataset after a
+patient-withdrawal request:
+
+```python
+from ConMedRL import rebuild_dataset_after_withdrawal
+
+retained = rebuild_dataset_after_withdrawal(
+    prior_manifest_path=bundle.written_files["manifest"],
+    source_config=bundle.config,
+    withdrawn_subject_ids=[10001234],
+    output_dir="./processed_after_withdrawal",
+)
+```
+
+The operation removes all associated episodes before feature extraction,
+rebuilds the splits and transformations, records a new content hash, and
+invalidates the superseded dataset manifest. Model manifests bound to the
+earlier hash are rejected. The separate `exact_retrain` helper invokes a
+caller-provided callback that must create fresh model and optimizer state.
+
+This is deletion followed by reconstruction and retraining, not approximate
+parameter scrubbing or proof of erasure from external systems. See
+[`Example_Exact_Machine_Unlearning.ipynb`](Experiment%20Notebook/Example_Exact_Machine_Unlearning.ipynb).
+
+## Continuous actions
+
+The continuous module supports bounded scalar or vector actions:
+
+```python
+from ConMedRL.conmedrl_continuous import RLTraining
+
+trainer = RLTraining(
+    cfg=rl_config,
+    input_dim=bundle.state_dim,
+    output_dim=bundle.action_dim,
+    train_data_loader=train_loader.data_torch_loader_train,
+    val_data_loader=val_loader.data_torch_loader,
+    action_bounds=bundle.ordered_action_bounds,
+)
+```
+
+This component is provided for methodological research. It has not been
+validated for autonomous clinical control.
+
+## Data sources
+
+Raw clinical datasets are not distributed with this repository:
+
+- [MIMIC-IV](https://physionet.org/content/mimiciv/3.1/)
+- [SICdb](https://physionet.org/content/sicdb/1.0.8/)
+- [NWICU](https://physionet.org/content/nwicu-northwestern-icu/0.1.0/)
+
+Users are responsible for obtaining access, satisfying data-use agreements,
+and following institutional privacy and ethics requirements.
+
+## Repository layout
+
+```text
+ConMedRL/
+  conmedrl.py                 discrete FQI/FQE OCRL implementation
+  conmedrl_continuous.py      continuous actor-critic/FQE implementation
+  data_loader.py              PyTorch transition loaders
+  model_artifacts.py          model manifests and compatibility checks
+  data/
+    adapters/                 MIMIC-IV, SICdb, and generic adapters
+    profiles/                 reviewed NWICU specifications
+    pipeline.py               unified build/load API
+    dataset.py                RLDatasetBundle and d3rlpy conversion
+    fhir.py                   FHIR R4 export
+    planner.py                reviewed metadata-level planning
+    unlearning.py             patient-withdrawal reconstruction
+Experiment Notebook/         executable examples
+tests/                       unit and integration tests
+CDM-Software/                local Flask research demonstration
+```
+
+The top-level `Data` package is retained for backward compatibility. New code
+should use `ConMedRL.data`.
+
+## Research software interfaces
+
+`CDM-Software/web_application_demo.py` is a local Flask demonstration for
+checking trained-model integration across the discharge and extubation
+examples. A focused extubation research prototype is available at
+[ExtEval](https://exteval.com/).
+
+These interfaces are research prototypes. Their outputs are not clinical
+recommendations and do not establish clinical effectiveness or safety.
+
+## Research background
+
+The discharge formulation and evaluation are reported in:
+
+> Sun, M. and Xie, J. (2025). *Discharge with Multiple Readmissions and
+> Constraints*. IISE Transactions on Healthcare Systems Engineering.
+> https://doi.org/10.1080/24725579.2025.2569355
+
+The extubation study, *Personalized Extubation Decisions under Resource
+Constraints: An Offline Constrained Reinforcement Learning Approach*, is under
+major revision at *Health Care Management Science*.
+
+## License and contact
+
+ConMED-RL is released under the [MIT License](LICENSE).
+
+- Maotong Sun: maotong.sun@tum.de
+- Jingui Xie: jingui.xie@tum.de
+
+Please use [GitHub Issues](https://github.com/smt970913/ConMED-RL/issues) for
+bug reports and feature requests.

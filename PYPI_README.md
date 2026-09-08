@@ -1,10 +1,14 @@
-# ConMED-RL: An OCRL-Based Toolkit for Medical Decision Support
+# ConMED-RL: Offline Constrained RL for Critical-Care Research
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![PyPI version](https://badge.fury.io/py/conmedrl.svg)](https://badge.fury.io/py/conmedrl)
 
-**ConMED-RL** is an **Offline Constrained Reinforcement Learning (OCRL)** toolkit designed for critical care decision support. The toolkit provides an OCRL-based policy learning framework for medical decision-making tasks under single or multiple constraints.
+**ConMED-RL** is an **Offline Constrained Reinforcement Learning (OCRL)**
+toolkit for retrospective critical-care research. It combines ICU data
+processing, discrete and continuous constrained policy learning, separate
+Fitted Q Evaluation (FQE) models for objectives and constraints, and
+research-interface examples.
 
 This toolkit builds upon our research on OCRL applications in critical care: a published study in *IISE Transactions on Healthcare Systems Engineering* addressing ICU discharge decision-making, and ongoing work under revision in *Health Care Management Science* on ICU extubation decision-making.
 
@@ -16,6 +20,10 @@ Install ConMED-RL using pip:
 
 ```bash
 pip install conmedrl
+
+# Optional d3rlpy/Parquet or LLM integrations
+pip install "conmedrl[data]"
+pip install "conmedrl[llm]"
 ```
 
 ### Brief Usage Instruction
@@ -40,7 +48,7 @@ train_data_loader = TrainDataLoader(cfg = dm_configuration.config,
                                     terminal_state = terminal_state)
 
 train_data_loader.data_buffer_train(action_name = 'discharge_action', 
-                                    done_condition = True, 
+                                    done_condition = None,
                                     num_constraint = 2)
 
 val_data_loader = ValTestDataLoader(cfg = dm_configuration.config, 
@@ -51,7 +59,7 @@ val_data_loader = ValTestDataLoader(cfg = dm_configuration.config,
                                     terminal_state = terminal_state)
 
 val_data_loader.data_buffer(action_name = 'discharge_action', 
-                            done_condition = True, 
+                            done_condition = None,
                             num_constraint = 2)
 ```
 
@@ -96,6 +104,16 @@ ocrl_training.train(agent_fqi = fqi_agent,
 - **TrainDataLoader**: Handles training data preparation and batch generation
 - **ValTestDataLoader**: Manages validation and testing data processing
 - Support for custom done conditions and constraint cost functions
+- Unified MIMIC-IV/SICdb preprocessing and an approved declarative adapter for
+  MIMIC-like datasets such as NWICU
+- Review-first, metadata-only LLM planning for custom discrete or continuous
+  clinical OCRL tasks; generated code is never executed
+- CSV, Parquet, d3rlpy, and de-identified FHIR R4 NDJSON exchange outputs
+- Auditable patient withdrawal with dataset/model version tracking,
+  stale-model rejection, and caller-controlled fresh retraining
+
+See `DATA_PROCESSING.md` and the generic-data, FHIR, and exact-unlearning
+example notebooks for the full safety and interoperability contract.
 
 ## 🏥 Key Features
 
@@ -116,22 +134,15 @@ ConMED-RL has been successfully applied to:
 ## 🔧 Hyperparameter Configuration
 
 ```python
-from ConMedRL import RLConfig_custom
+from ConMedRL import RLConfigurator
 
-custom_config = RLConfig_custom(
-    algo_name = 'OCRL policy learning for ...'
-    gamma = 0.99,
-    batch_size = 256,
-    train_eps = int(8e6),
-    ...
-)
-
-# Use custom configuration in training
-trainer = RLTraining(
-    config = custom_config, 
-    ...
-)
+configuration = RLConfigurator()
+configuration.choose_config_method()
+rl_config = configuration.config
 ```
+
+For a non-interactive, fully specified configuration and a short training run,
+see `Experiment Notebook/Example_ConMedRL_End_to_End_Workflow.ipynb`.
 
 ## Data Preprocessing
 
@@ -147,7 +158,7 @@ For comprehensive guides, tutorials, and examples:
 
 - **GitHub Repository**: [https://github.com/smt970913/ConMED-RL](https://github.com/smt970913/ConMED-RL)
 - **Example Notebooks**: Interactive Jupyter notebooks for MIMIC-IV datasets
-- **Web Application Demo**: Clinical decision support interface
+- **Web Application Demo**: Research interface for model-integration checks
 
 ## 🔬 Research and Citation
 
@@ -199,7 +210,10 @@ For development setup and contributing guidelines, visit the [GitHub repository]
 
 ## ⚠️ Disclaimer
 
-This toolkit is intended for research purposes. Clinical deployment requires appropriate validation, regulatory approval, and should only be used by qualified healthcare professionals in accordance with institutional guidelines and applicable regulations.
+This toolkit is intended for retrospective research and software evaluation.
+It is not a medical device and must not be used to direct patient care without
+appropriate local validation, governance, regulatory review, and clinician
+oversight.
 
 ---
 

@@ -8,17 +8,27 @@ This package contains data preprocessing scripts for different datasets:
 - SICdb_extubation: SICdb extubation decision data preprocessing
 """
 
-__version__ = "1.0.0" # only for reference
+__version__ = "1.1.0"  # compatibility package; canonical API is ConMedRL.data
 
 # Import data preprocessing modules
 from . import mimic_iv_icu_discharge
 from . import mimic_iv_icu_extubation
 from . import SICdb_discharge
 from . import SICdb_extubation
+from ConMedRL.data import (
+    PreprocessConfig,
+    VariableSearch,
+    build_dataset,
+    load_dataset,
+)
 
 __all__ = [
     "mimic_iv_icu_discharge",
     "mimic_iv_icu_extubation", 
     "SICdb_discharge",
-    "SICdb_extubation"
+    "SICdb_extubation",
+    "PreprocessConfig",
+    "VariableSearch",
+    "build_dataset",
+    "load_dataset",
 ] 

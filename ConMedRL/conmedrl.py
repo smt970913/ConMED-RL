@@ -16,6 +16,17 @@ import datetime
 import math
 from pathlib import Path
 
+try:
+    from .model_artifacts import (
+        create_model_artifact_manifest,
+        set_deterministic_seed,
+    )
+except ImportError:  # Legacy ``import conmedrl`` used by data_loader.py.
+    from model_artifacts import (
+        create_model_artifact_manifest,
+        set_deterministic_seed,
+    )
+
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -334,7 +345,7 @@ class ReplayBuffer:
         capacity (int): Maximum number of transitions to store
     """
     
-    def __init__(self, capacity: int) -> None:
+    def __init__(self, capacity: int, seed: Optional[int] = None) -> None:
         """
         Initialize the replay buffer.
         
@@ -344,6 +355,13 @@ class ReplayBuffer:
         self.capacity = capacity
         self.buffer: List[Tuple[Any, Any, Any, List[Any], Any, Any]] = []
         self.position = 0
+        # A private RNG makes replay order reproducible without depending on
+        # unrelated users of Python's process-global random state.
+        self._rng = random.Random(seed) if seed is not None else random
+
+    def set_seed(self, seed: int) -> None:
+        """Reset replay sampling to a deterministic sequence."""
+        self._rng = random.Random(int(seed))
 
     def push(self, 
              state: Any, 
@@ -382,7 +400,7 @@ class ReplayBuffer:
         Returns:
             Tuple containing batched states, actions, objective costs, constraint costs, next states, and done flags
         """
-        batch = random.sample(self.buffer, batch_size)
+        batch = self._rng.sample(self.buffer, batch_size)
         state, action, obj_cost, con_cost, next_state, done = zip(*batch)
 
         con_cost = [list(costs) for costs in zip(*con_cost)]
@@ -470,8 +488,7 @@ class FQE:
         self.target_net = FCN_fqe(state_dim, action_dim, hidden_layers, 
                                   cfg.activation_function_fqe, cfg.activation_params_fqe).to(self.device)
 
-        for target_param, param in zip(self.target_net.parameters(), self.policy_net.parameters()):
-            target_param.data.copy_(param.data)
+        self.target_net.load_state_dict(self.policy_net.state_dict())
 
         if hidden_layers is None:
             self.optimizer = optim.SGD(self.policy_net.parameters(), lr = self.lr_fqe)
@@ -504,14 +521,18 @@ class FQE:
         Returns:
             float: Loss value after update
         """
-        # We need to evaluate the parameterized policy
-        policy_action_batch = self.eval_agent.rl_policy(next_state_batch)
+        # FQE evaluates the policy but never differentiates through it.
+        with torch.no_grad():
+            policy_action_batch = self.eval_agent.rl_policy(next_state_batch)
 
         # predicted Q-value using policy Q-network
         q_values = self.policy_net(state_batch).gather(dim = 1, index = action_batch)
 
         # target Q-value calculated by target Q-network
-        next_q_values = self.target_net(next_state_batch).gather(dim = 1, index = policy_action_batch).squeeze(1).detach()
+        with torch.no_grad():
+            next_q_values = self.target_net(next_state_batch).gather(
+                dim=1, index=policy_action_batch
+            ).squeeze(1)
 
         expected_q_values = cost_batch + self.gamma * next_q_values * (1 - done_batch)
 
@@ -520,13 +541,14 @@ class FQE:
         # Update Q-network by minimizing the above loss function
         self.optimizer.zero_grad()
         loss.backward()
-        for param in self.policy_net.parameters():
-            param.grad.data.clamp_(-1, 1)
+        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 1.0)
         self.optimizer.step()
 
         return loss.item()
     
-    def avg_Q_value_est(self, state_batch: torch.Tensor, z_value: float) -> Tuple[float, float]:
+    def avg_Q_value_est(
+        self, state_batch: torch.Tensor, z_value: float
+    ) -> Tuple[float, float, float]:
         """
         Estimate average Q-value and confidence bound for a batch of states.
         
@@ -537,15 +559,19 @@ class FQE:
         Returns:
             Tuple[float, float, float]: Mean Q-value, upper confidence bound, and lower confidence bound
         """
-        policy_action_batch = self.eval_agent.rl_policy(state_batch)
-        q_values = self.policy_net(state_batch).gather(dim = 1, index = policy_action_batch).squeeze(1)
+        with torch.no_grad():
+            policy_action_batch = self.eval_agent.rl_policy(state_batch)
+            q_values = self.policy_net(state_batch).gather(
+                dim=1, index=policy_action_batch
+            ).squeeze(1)
 
         q_mean = q_values.mean()
-        q_std = q_values.std()
+        q_std = q_values.std(unbiased=False)
         n = q_values.shape[0]
     
-        if n <= 1 or q_std == 0:
-            return q_mean.item(), q_mean.item()
+        if n <= 1 or q_std.item() == 0.0:
+            value = q_mean.item()
+            return value, value, value
     
         z = z_value  
         q_upper_bound = q_mean + z * (q_std / math.sqrt(n))
@@ -604,8 +630,7 @@ class FQI:
         self.target_net = FCN_fqi(state_dim, action_dim, hidden_layers,
                                  cfg.activation_function_fqi, cfg.activation_params_fqi).to(self.device)
 
-        for target_param, param in zip(self.target_net.parameters(), self.policy_net.parameters()):
-            target_param.data.copy_(param.data)
+        self.target_net.load_state_dict(self.policy_net.state_dict())
 
         if hidden_layers is None:
             self.optimizer = optim.SGD([
@@ -641,13 +666,23 @@ class FQI:
             float: Loss value after update
         """
         q_values = self.policy_net(state_batch).gather(dim = 1, index = action_batch)
-        policy_action_batch = self.policy_net(next_state_batch).min(1)[1].unsqueeze(1)
-        next_q_values = self.target_net(next_state_batch).gather(dim = 1, index = policy_action_batch).squeeze(1).detach()
+        with torch.no_grad():
+            policy_action_batch = self.policy_net(next_state_batch).min(1)[1].unsqueeze(1)
+            next_q_values = self.target_net(next_state_batch).gather(
+                dim=1, index=policy_action_batch
+            ).squeeze(1)
 
         sum_con_cost = 0
-        for i in range(len(lambda_t_list)):
-            lambda_t = lambda_t_list[i]
-            sum_con_cost += lambda_t * con_cost_batch[i]
+        if len(lambda_t_list) < len(con_cost_batch):
+            raise ValueError(
+                "Expected at least {0} Lagrange multipliers, got {1}".format(
+                    len(con_cost_batch), len(lambda_t_list)
+                )
+            )
+        # EG carries one extra slack weight. It is not a clinical constraint
+        # and must never be indexed into con_cost_batch.
+        for lambda_t, con_cost in zip(lambda_t_list, con_cost_batch):
+            sum_con_cost += lambda_t * con_cost
 
         expected_q_values = (obj_cost_batch + sum_con_cost) + self.gamma * next_q_values * (1 - done_batch)
 
@@ -655,8 +690,7 @@ class FQI:
 
         self.optimizer.zero_grad()
         loss.backward()
-        for param in self.policy_net.parameters():
-            param.grad.data.clamp_(-1, 1)
+        torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 1.0)
         self.optimizer.step()
 
         return loss.item()
@@ -671,8 +705,9 @@ class FQI:
         Returns:
             float: Average Q-value
         """
-        q_values = self.policy_net(state_batch)
-        avg_q_values = q_values.min(1)[0].unsqueeze(1).mean().item()
+        with torch.no_grad():
+            q_values = self.policy_net(state_batch)
+            avg_q_values = q_values.min(1)[0].mean().item()
 
         return avg_q_values
 
@@ -737,6 +772,8 @@ class RLConfig_custom:
         activation_params_fqe (Dict[str, Any]): Parameters for FQE activation function
         lambda_update (Optional[str]): Method for updating Lagrange multipliers (None, 'PG with bound', 'EG with bound')
         bound_lambda (Optional[float]): Bound for Lagrange multipliers when using bounded updates
+        random_seed (int): Seed for replay sampling and training reproducibility
+        deterministic_algorithms (bool): Request deterministic PyTorch operations
     """
     
     def __init__(self, 
@@ -766,7 +803,9 @@ class RLConfig_custom:
                  activation_function_fqe: str, 
                  activation_params_fqe: Dict[str, Any],
                  lambda_update: Optional[str] = None,
-                 bound_lambda: Optional[float] = None) -> None:
+                 bound_lambda: Optional[float] = None,
+                 random_seed: int = 42,
+                 deterministic_algorithms: bool = True) -> None:
         """
         Initialize the RLConfig_custom with the given parameters.
         
@@ -838,6 +877,8 @@ class RLConfig_custom:
         # Lagrange multiplier update configuration
         self.lambda_update = lambda_update
         self.bound_lambda = bound_lambda
+        self.random_seed = int(random_seed)
+        self.deterministic_algorithms = bool(deterministic_algorithms)
 
         if device_type == 'cuda':
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # check gpu
@@ -1065,7 +1106,9 @@ class RLConfigurator:
 
             for i in range(constraint_num):
                 lr_fqe_con = self._get_float_input(f"Enter the learning rate of FQE Agent for evaluating the constraint {i+1}: ", 0)
-                lr_lambda = self._get_float_input(f"Enter the learning rate for dual variable $\lambda$ {i+1}: ", 0)
+                lr_lambda = self._get_float_input(
+                    f"Enter the learning rate for dual variable lambda {i+1}: ", 0
+                )
                 threshold = self._get_float_input(f"Enter the value of constraint threshold {i+1}: ", 0)
                 lr_fqe_con_list.append(lr_fqe_con)
                 lr_lambda_list.append(lr_lambda)
@@ -1276,7 +1319,7 @@ class RLTraining:
         Returns:
             FQI: Configured FQI agent
         """
-        torch.manual_seed(seed)
+        set_deterministic_seed(seed)
         
         if weight_decay is None:
             weight_decay = self.cfg.weight_decay_fqi
@@ -1305,7 +1348,7 @@ class RLTraining:
         Returns:
             FQE: Configured FQE agent
         """
-        torch.manual_seed(seed)
+        set_deterministic_seed(seed)
         
         if weight_decay is None:
             weight_decay = self.cfg.weight_decay_fqe
@@ -1322,28 +1365,51 @@ class RLTraining:
         return agent_fqe
     
     def projected_gradient_update(self, lambda_list, B):
-        if B == None:
-            return [max(0, x) for x in lambda_list]
-        else:
-            norm = math.sqrt(sum(x*x for x in lambda_list))
-            if norm > B:
-                return [B * x / norm for x in lambda_list]
-            else:
-                return lambda_list
+        projected = [max(0.0, float(x)) for x in lambda_list]
+        if B is None:
+            return projected
+        if B < 0:
+            raise ValueError("PG with bound requires bound_lambda >= 0")
+        norm = math.sqrt(sum(x * x for x in projected))
+        if norm > B and norm > 0:
+            return [B * x / norm for x in projected]
+        return projected
             
     def exponentiated_gradient(self, lambda_list, constraint_violation_list, lr_list, B):
         d = len(constraint_violation_list)
-        constraint_violation_list_aug = constraint_violation_list + [0.0]
-        lr_list_aug = lr_list + [0.0]
+        if len(lr_list) != d:
+            raise ValueError(
+                "Expected one EG learning rate per constraint ({0}), got {1}".format(
+                    d, len(lr_list)
+                )
+            )
+        if B is None or B <= 0:
+            raise ValueError("EG with bound requires bound_lambda > 0")
+        if len(lambda_list) == d:
+            # Add the slack coordinate when called with an older checkpoint.
+            lambda_list = list(lambda_list) + [max(B - sum(lambda_list), 0.0)]
+        if len(lambda_list) != d + 1:
+            raise ValueError(
+                "EG expects {0} constraint weights plus one slack weight, got {1}".format(
+                    d, len(lambda_list)
+                )
+            )
 
-        w = [
-            lambda_list[i] * math.exp(-lr_list_aug[i] * constraint_violation_list_aug[i])
-            for i in range(d + 1)
+        gradients = [
+            float(lr) * float(violation)
+            for lr, violation in zip(lr_list, constraint_violation_list)
+        ] + [0.0]
+        # Shift before exp to avoid overflow without changing the normalised
+        # result.
+        shift = max(gradients)
+        weights = [
+            max(float(value), 0.0) * math.exp(gradient - shift)
+            for value, gradient in zip(lambda_list, gradients)
         ]
-
-        total_w = sum(w)
-
-        return [wi/total_w * B for wi in w]
+        total = sum(weights)
+        if not math.isfinite(total) or total <= 0:
+            return [B / (d + 1) for _ in range(d + 1)]
+        return [weight / total * B for weight in weights]
 
     def train(self, 
               agent_fqi: FQI, 
@@ -1402,6 +1468,9 @@ class RLTraining:
         state_batch_val = self.val_data_loader(data_type = 'val')
         
         model_update_counter = 0  # Counter to track model updates
+        save_num = max(1, int(save_num))
+        total_updates = max(1, self.cfg.train_eps * self.cfg.train_eps_steps)
+        snapshot_interval = max(1, total_updates // save_num)
 
         for k in range(self.cfg.train_eps):
             loss_list_fqi: List[float] = []
@@ -1420,45 +1489,36 @@ class RLTraining:
                 loss_rl = agent_fqi.update(lambda_t_list, state_batch, action_batch, obj_cost_batch, con_cost_batch, next_state_batch, done_batch)
                 loss_ev_obj = agent_fqe_obj.update(state_batch, action_batch, obj_cost_batch, next_state_batch, done_batch)
                 
-                # Save FQI model state
                 model_update_counter += 1
-                if len(self.fqi_models_history) >= save_num:
-                    self.fqi_models_history.pop(0)  
-                self.fqi_models_history.append({
-                    'update_num': model_update_counter,
-                    'epoch': k,
-                    'step': j,
-                    'model_state': self._get_model_state(agent_fqi)
-                })
-
-                # Save FQE objective model state
-                if len(self.fqe_obj_models_history) >= save_num:
-                    self.fqe_obj_models_history.pop(0) 
-                self.fqe_obj_models_history.append({
-                    'update_num': model_update_counter,
-                    'epoch': k,
-                    'step': j,
-                    'model_state': self._get_model_state(agent_fqe_obj)
-                })
+                save_snapshot = (
+                    model_update_counter % snapshot_interval == 0
+                    or model_update_counter == total_updates
+                )
+                if save_snapshot:
+                    self._append_model_snapshot(
+                        self.fqi_models_history, agent_fqi, model_update_counter,
+                        k, j, save_num
+                    )
+                    self._append_model_snapshot(
+                        self.fqe_obj_models_history, agent_fqe_obj,
+                        model_update_counter, k, j, save_num
+                    )
                 
                 ##############################################################################################################
                 loss_list_fqi.append(loss_rl)
                 loss_list_fqe_obj.append(loss_ev_obj)
 
-                if constraint is None:
+                if not constraint:
                     for m in range(len(agent_fqe_con_list)):
                         loss_con = agent_fqe_con_list[m].update(state_batch, action_batch, con_cost_batch[m], next_state_batch, done_batch)
                         loss_list_fqe_con[m].append(loss_con)
                         
-                        # Save FQE constraint model state
-                        if len(self.fqe_con_models_history[m]) >= save_num:
-                            self.fqe_con_models_history[m].pop(0)  
-                        self.fqe_con_models_history[m].append({
-                            'update_num': model_update_counter,
-                            'epoch': k,
-                            'step': j,
-                            'model_state': self._get_model_state(agent_fqe_con_list[m])
-                        })
+                        if save_snapshot:
+                            self._append_model_snapshot(
+                                self.fqe_con_models_history[m],
+                                agent_fqe_con_list[m], model_update_counter,
+                                k, j, save_num
+                            )
                         
                         con_est_value, con_est_value_up, con_est_value_lb = agent_fqe_con_list[m].avg_Q_value_est(state_batch_val, z_value)
                         fqe_est_con[m].append(con_est_value)
@@ -1477,16 +1537,12 @@ class RLTraining:
                         loss_con = agent_fqe_con_list[m].update(state_batch, action_batch, con_cost_batch[m], next_state_batch, done_batch)
                         loss_list_fqe_con[m].append(loss_con)
                         
-                        # Save FQE constraint model state
-                        if len(self.fqe_con_models_history[m]) >= save_num:
-                            self.fqe_con_models_history[m].pop(0)
-                            
-                        self.fqe_con_models_history[m].append({
-                            'update_num': model_update_counter,
-                            'epoch': k,
-                            'step': j,
-                            'model_state': self._get_model_state(agent_fqe_con_list[m])
-                        })
+                        if save_snapshot:
+                            self._append_model_snapshot(
+                                self.fqe_con_models_history[m],
+                                agent_fqe_con_list[m], model_update_counter,
+                                k, j, save_num
+                            )
                         
                         con_est_value, con_est_value_up, con_est_value_lb = agent_fqe_con_list[m].avg_Q_value_est(state_batch_val, z_value)
                         fqe_est_con[m].append(con_est_value)
@@ -1517,18 +1573,19 @@ class RLTraining:
                 ######################################################################################
                 if j % self.cfg.target_update == 0:
 
-                    ### update the target agent for learning agent (FQI)
-                    for target_param, policy_param in zip(agent_fqi.target_net.parameters(), agent_fqi.policy_net.parameters()):
-                        target_param.data.copy_(self.cfg.tau * policy_param.data + (1 - self.cfg.tau) * target_param.data)
+                    with torch.no_grad():
+                        ### update the target agent for learning agent (FQI)
+                        for target_param, policy_param in zip(agent_fqi.target_net.parameters(), agent_fqi.policy_net.parameters()):
+                            target_param.lerp_(policy_param, self.cfg.tau)
 
-                    ### update the target agent for evaluation agent (FQE objective cost)
-                    for target_param, policy_param in zip(agent_fqe_obj.target_net.parameters(), agent_fqe_obj.policy_net.parameters()):
-                        target_param.data.copy_(self.cfg.tau * policy_param.data + (1 - self.cfg.tau) * target_param.data)
+                        ### update the target agent for evaluation agent (FQE objective cost)
+                        for target_param, policy_param in zip(agent_fqe_obj.target_net.parameters(), agent_fqe_obj.policy_net.parameters()):
+                            target_param.lerp_(policy_param, self.cfg.tau)
 
-                    ### update the target agent for evaluation agent (FQE constraint cost)
-                    for agent_fqe_con in agent_fqe_con_list:
-                        for target_param, policy_param in zip(agent_fqe_con.target_net.parameters(), agent_fqe_con.policy_net.parameters()):
-                            target_param.data.copy_(self.cfg.tau * policy_param.data + (1 - self.cfg.tau) * target_param.data)
+                        ### update the target agent for evaluation agent (FQE constraint cost)
+                        for agent_fqe_con in agent_fqe_con_list:
+                            for target_param, policy_param in zip(agent_fqe_con.target_net.parameters(), agent_fqe_con.policy_net.parameters()):
+                                target_param.lerp_(policy_param, self.cfg.tau)
                 #########################################################################################
             print(f"Epoch {k + 1}/{self.cfg.train_eps}")
             print(f"Average FQE estimated objective cost after epoch {k + 1}: {np.mean(fqe_est_obj)}")        
@@ -1551,6 +1608,32 @@ class RLTraining:
         print("Complete Training!")
 
         return self.FQI_loss, self.FQE_loss_obj, self.FQE_loss_con, self.FQI_est_values, self.FQE_est_obj_costs, self.FQE_est_con_costs, self.lambda_dict
+
+    def _append_model_snapshot(
+        self,
+        history: List[Dict[str, Any]],
+        agent: Union[FQI, FQE],
+        update_num: int,
+        epoch: int,
+        step: int,
+        limit: int,
+    ) -> None:
+        """Store a bounded, periodic model snapshot.
+
+        Deep-copying every network after every gradient step dominated runtime
+        and GPU-to-CPU synchronisation on long runs. ``train`` now samples at a
+        regular interval and keeps at most ``limit`` snapshots.
+        """
+        if len(history) >= limit:
+            history.pop(0)
+        history.append(
+            {
+                "update_num": update_num,
+                "epoch": epoch,
+                "step": step,
+                "model_state": self._get_model_state(agent),
+            }
+        )
     
     def _get_model_state(self, agent: Union[FQI, FQE]) -> Dict[str, Any]:
         """
@@ -1623,7 +1706,15 @@ def save_ocrl_models_and_data(agent_fqi,
                               version: str = "v0",
                               custom_filename_prefix: str = None,
                               save_date: bool = True,
-                              create_dirs: bool = True):
+                              create_dirs: bool = True,
+                              dataset_bundle=None,
+                              dataset_content_hash: str = None,
+                              model_dimensions: Dict[str, Any] = None,
+                              constraints=None,
+                              rl_config=None,
+                              seeds: Dict[str, Any] = None,
+                              manifest_path: str = None,
+                              training_method: str = None):
     """
     Save trained OCRL models and training data with flexible path and naming options.
     
@@ -1736,6 +1827,39 @@ def save_ocrl_models_and_data(agent_fqi,
         
         saved_files['training_data'] = data_files
         print(f"Training data saved successfully to: {data_save_path}")
+
+        # Emit JSON-only model lineage when retained-dataset identity is known.
+        manifest_dataset = dataset_bundle or dataset_content_hash
+        if manifest_dataset is not None:
+            if dataset_bundle is not None and dataset_content_hash is not None:
+                try:
+                    from .model_artifacts import dataset_content_hash as compute_dataset_hash
+                except ImportError:
+                    from model_artifacts import dataset_content_hash as compute_dataset_hash
+                if compute_dataset_hash(dataset_bundle) != compute_dataset_hash(dataset_content_hash):
+                    raise ValueError("dataset_bundle and dataset_content_hash disagree")
+            lineage = create_model_artifact_manifest(
+                model_files,
+                manifest_dataset,
+                dimensions=model_dimensions or {
+                    "state_dim": getattr(ocrl_training, "state_dim", None),
+                    "action_dim": getattr(ocrl_training, "action_dim", None),
+                },
+                constraints=(
+                    constraints
+                    if constraints is not None
+                    else len(agent_fqe_con_list)
+                ),
+                rl_config=rl_config if rl_config is not None else getattr(ocrl_training, "cfg", {}),
+                seeds=seeds,
+                training_method=training_method,
+            )
+            if manifest_path is None:
+                manifest_path = os.path.join(
+                    model_save_path,
+                    f"{filename_prefix}_manifest{date_part}{version_part}.json",
+                )
+            saved_files['manifest'] = lineage.write(manifest_path)
         
         # Summary
         print(f"\n=== Save Summary ===")

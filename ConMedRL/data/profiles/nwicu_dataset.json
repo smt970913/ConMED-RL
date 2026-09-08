@@ -1,0 +1,97 @@
+{
+  "spec_version": "1.0",
+  "name": "nwicu",
+  "description": "Reviewed NWICU MIMIC-like table and variable profile. No patient rows are embedded.",
+  "tables": {
+    "icustays": {"path": "data/nw_icu/icustays.csv.gz"},
+    "patients": {"path": "data/nw_hosp/patients.csv.gz"},
+    "admissions": {"path": "data/nw_hosp/admissions.csv.gz"},
+    "d_items": {"path": "data/nw_icu/d_items.csv.gz"},
+    "d_labitems": {"path": "data/nw_hosp/d_labitems.csv.gz"},
+    "chartevents": {
+      "path": "data/nw_icu/chartevents.csv.gz",
+      "large": true,
+      "id_column": "itemid",
+      "value_column": "valuenum",
+      "unit_column": "valueuom",
+      "time_column": "charttime",
+      "stay_id_column": "stay_id"
+    },
+    "labevents": {
+      "path": "data/nw_hosp/labevents.csv.gz",
+      "large": true,
+      "id_column": "itemid",
+      "value_column": "valuenum",
+      "unit_column": "valueuom",
+      "time_column": "charttime",
+      "hadm_id_column": "hadm_id",
+      "stay_id_column": "stay_id"
+    },
+    "procedureevents": {
+      "path": "data/nw_icu/procedureevents.csv.gz",
+      "id_column": "itemid",
+      "time_column": "starttime",
+      "stay_id_column": "stay_id"
+    }
+  },
+  "dictionary_tables": ["d_items", "d_labitems"],
+  "observation_tables": ["chartevents", "labevents"],
+  "dictionary": {
+    "id_column": "itemid",
+    "name_column": "label",
+    "unit_column": "unitname",
+    "group_column": "_source_table",
+    "description_column": "abbreviation"
+  },
+  "variable_mappings": [
+    {"canonical": "Heart Rate", "source_ids": [320045], "table": "chartevents", "confidence": 1.0, "source_units": ["bpm"]},
+    {"canonical": "Blood Pressure Systolic", "source_ids": [320179], "table": "chartevents", "confidence": 1.0, "source_units": ["mmHg"]},
+    {"canonical": "Blood Pressure Diastolic", "source_ids": [320180], "table": "chartevents", "confidence": 1.0, "source_units": ["mmHg"]},
+    {"canonical": "Temperature C", "source_ids": [323761], "table": "chartevents", "confidence": 1.0, "source_units": ["F"]},
+    {"canonical": "SaO2", "source_ids": [320277], "table": "chartevents", "confidence": 1.0, "source_units": ["%"]},
+    {"canonical": "Respiratory Rate", "source_ids": [320210], "table": "chartevents", "confidence": 1.0, "source_units": ["insp/min"]},
+    {"canonical": "weight", "source_ids": [326531], "table": "chartevents", "confidence": 1.0, "source_units": ["Ounce"]},
+    {"canonical": "Creatinine (serum)", "source_ids": [100002], "table": "labevents", "confidence": 1.0, "source_units": ["mg/dL"]},
+    {"canonical": "BUN", "source_ids": [100004], "table": "labevents", "confidence": 1.0, "source_units": ["mg/dL"]},
+    {"canonical": "Sodium (serum)", "source_ids": [100010], "table": "labevents", "confidence": 1.0, "source_units": ["mmol/L"]},
+    {"canonical": "Potassium (serum)", "source_ids": [100011], "table": "labevents", "confidence": 1.0, "source_units": ["mmol/L"]},
+    {"canonical": "Chloride (serum)", "source_ids": [100012], "table": "labevents", "confidence": 1.0, "source_units": ["mmol/L"]},
+    {"canonical": "Magnesium", "source_ids": [100009], "table": "labevents", "confidence": 1.0, "source_units": ["mg/dL"]},
+    {"canonical": "Ionized Calcium", "source_ids": [100044], "table": "labevents", "confidence": 1.0, "source_units": ["mmol/L"]},
+    {"canonical": "Glucose (serum)", "source_ids": [100001], "table": "labevents", "confidence": 1.0, "source_units": ["mg/dL"]},
+    {"canonical": "Hemoglobin", "source_ids": [100007], "table": "labevents", "confidence": 1.0, "source_units": ["g/dL"]},
+    {"canonical": "Hematocrit (serum)", "source_ids": [100006], "table": "labevents", "confidence": 1.0, "source_units": ["%"]},
+    {"canonical": "WBC", "source_ids": [100016], "table": "labevents", "confidence": 1.0, "source_units": ["K/uL"]},
+    {"canonical": "Platelet Count", "source_ids": [100014], "table": "labevents", "confidence": 1.0, "source_units": ["K/uL"]},
+    {"canonical": "Total Bilirubin", "source_ids": [100020], "table": "labevents", "confidence": 1.0, "source_units": ["mg/dL"]},
+    {"canonical": "Albumin", "source_ids": [100021], "table": "labevents", "confidence": 1.0, "source_units": ["g/dL"]},
+    {"canonical": "Lactate", "source_ids": [100031], "table": "labevents", "confidence": 1.0, "source_units": ["mmol/L"]},
+    {"canonical": "Prothrombin time", "source_ids": [100034], "table": "labevents", "confidence": 1.0, "source_units": ["s"]},
+    {"canonical": "PTT", "source_ids": [100046], "table": "labevents", "confidence": 1.0, "source_units": ["s"]},
+    {"canonical": "INR", "source_ids": [100030], "table": "labevents", "confidence": 1.0, "source_units": ["1"]},
+    {"canonical": "Tidal Volume", "source_ids": [100077], "table": "labevents", "confidence": 1.0, "source_units": ["mL"]},
+    {"canonical": "PEEP Level", "source_ids": [100060], "table": "labevents", "confidence": 1.0, "source_units": ["cmH2O"]}
+  ],
+  "unit_rules": [
+    {
+      "source_id": 323761,
+      "from_unit": "F",
+      "to_unit": "Cel",
+      "scale": 0.5555555555555556,
+      "offset": -17.77777777777778,
+      "evidence": "NWICU d_items and chartevents valueuom"
+    },
+    {
+      "source_id": 326531,
+      "from_unit": "Ounce",
+      "to_unit": "kg",
+      "scale": 0.028349523125,
+      "offset": 0.0,
+      "evidence": "NWICU d_items and chartevents valueuom"
+    }
+  ],
+  "warnings": [
+    "Arterial/venous blood gas concepts are intentionally omitted because the local dictionary does not distinguish specimen type reliably.",
+    "Unplanned extubation is not represented by a verified NWICU concept and must not be inferred."
+  ]
+}
